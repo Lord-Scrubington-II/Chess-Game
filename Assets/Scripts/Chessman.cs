@@ -52,6 +52,7 @@ public class Chessman : MonoBehaviour
     void Start()
     {
         gameObject.transform.localScale = defaultScale;
+        //CalibrateWorldPos();
         InitBoardPos();
 
         Game.IndexChessman(gameObject);
@@ -140,7 +141,8 @@ public class Chessman : MonoBehaviour
     public bool SetBoardPos(Vector2Int coords)
     {
         if(coords.x > Game.BoardXYMax || coords.x > Game.BoardXYMin 
-            || coords.y > Game.BoardXYMax || coords.y > Game.BoardXYMin)
+            || coords.y > Game.BoardXYMax || coords.y > Game.BoardXYMin
+            || Game.BoardMatrix[coords.x, coords.y] != null)
         {
             return false;
         }
@@ -160,5 +162,15 @@ public class Chessman : MonoBehaviour
             (int)(gameObject.transform.position.y + Game.boardOffset));
 
         BoardCoords = rawPos;
+    }
+
+    //in case pieces are slightly misaligned
+    internal void CalibrateWorldPos()
+    {
+        Vector3 worldTransform = gameObject.transform.position;
+        worldTransform.x = Mathf.Floor(worldTransform.x) + 0.5f;
+        worldTransform.y = Mathf.Floor(worldTransform.y) - 0.5f;
+
+        gameObject.transform.position = worldTransform;
     }
 }

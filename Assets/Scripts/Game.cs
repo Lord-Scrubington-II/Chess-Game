@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[ExecuteInEditMode]
 public static class Game
 {
     //[SerializeField] private static GameObject chessPiece;
@@ -80,6 +79,7 @@ public static class Game
             }
         }
         */
+        Console.WriteLine(boardMatrix.ToString());
     }
 
     //legacy method
@@ -115,4 +115,6 @@ public static class Game
 
         return chessman.Colour;
     }
+
+
 }

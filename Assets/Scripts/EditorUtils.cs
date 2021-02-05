@@ -25,11 +25,14 @@ public class EditorUtils : MonoBehaviour
         SnapToGrid(chessman);
         chessman.SelectSprite();
         chessman.name = chessman.Colour.ToString() + " " + chessman.Type.ToString() + " " + chessman.BoardCoords.ToString();
-
-        //Game.IndexChessman(gameObject);
-        //Game.RefreshBoard();
     }
     
+
+    private void editorCalibrateWorldPos()
+    {
+        Chessman cm = gameObject.GetComponent<Chessman>();
+        cm.CalibrateWorldPos();
+    }
 
     //Snaps chessmen to the grid, which should be aligned with the board. 
     //Updates the transform and backing coordinates of the chessman as well.
@@ -74,11 +77,4 @@ public class EditorUtils : MonoBehaviour
         }
         
     }
-
-    private void CalibrateBoardPos(Chessman chessman)
-    {
-        Vector3 worldTransform = gameObject.transform.position;
-
-    }
-
 }

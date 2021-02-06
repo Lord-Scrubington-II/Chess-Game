@@ -34,20 +34,22 @@ public static class Game
     public static GameObject[,] BoardMatrix { get => boardMatrix; private set => boardMatrix = value; }
     public static LinkedList<GameObject> PlayerWhite { get => playerWhite; private set => playerWhite = value; }
     public static LinkedList<GameObject> PlayerBlack { get => playerBlack; private set => playerBlack = value; }
+    public static bool BlacksTurn { get => blacksTurn; private set => blacksTurn = value; }
 
+    //legacy method
     internal static void RefreshBoard()
     {
         //clear positions
         boardMatrix = new GameObject[8, 8];
 
-        
+
         foreach (GameObject piece in playerWhite)
         {
             if (piece != null)
             {
                 //add to board matrix
                 Chessman chessman = piece.GetComponent<Chessman>();
-                if(BoardMatrix[chessman.XBoard, chessman.YBoard] != null)
+                if (BoardMatrix[chessman.XBoard, chessman.YBoard] != null)
                 {
                     Console.WriteLine("Board Matrix Collision Detected.");
                 }
@@ -79,7 +81,6 @@ public static class Game
             }
         }
         */
-        Console.WriteLine(boardMatrix.ToString());
     }
 
     //legacy method
@@ -96,6 +97,7 @@ public static class Game
         return newChessman;
     }
 
+    //adds chessman to the linkedlists that comprise player armies
     public static Chessman.Colours IndexChessman(GameObject piece)
     {
         //not very smart, but it prevents duplicates of the same chess piece from existing,
@@ -104,10 +106,10 @@ public static class Game
         //if (playerWhite.Contains(piece)) Game.PlayerWhite.Remove(piece);
 
         Chessman chessman = piece.GetComponent<Chessman>();
-        if(chessman.Colour == Chessman.Colours.Black)
+        if (chessman.Colour == Chessman.Colours.Black)
         {
             if (!playerBlack.Contains(piece)) playerBlack.AddLast(piece);
-        } 
+        }
         else
         {
             if (!playerBlack.Contains(piece)) playerWhite.AddLast(piece);
@@ -116,5 +118,27 @@ public static class Game
         return chessman.Colour;
     }
 
+    //adds chessman to the board matrix.
+    //this clobbers existing chessmen in the matrix, so be careful not to have unreferenced pieces.
+    public static void AddPieceToMatrix(GameObject newPiece)
+    {
+        Chessman cm = newPiece.GetComponent<Chessman>();
+        BoardMatrix[cm.XBoard, cm.YBoard] = newPiece;
+    }
 
+    public static void SetSquareEmpty(int x, int y)
+    {
+        BoardMatrix[x, y] = null;
+    }
+
+    public static GameObject PieceAtPosition(int x, int y)
+    {
+        return BoardMatrix[x, y];
+    }
+
+    public static bool PositionIsValid(int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= boardMatrix.Length || y >= boardMatrix.Length) return false;
+        return true;
+    }
 }

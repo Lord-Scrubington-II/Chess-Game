@@ -5,18 +5,16 @@ using UnityEngine;
 
 public class Chessman : MonoBehaviour
 {
+    //ref to the moveplate prefab
+    public GameObject movePlatePrefab;
 
-    public GameObject controller;//might use static
-    public GameObject movePlate;
-
-    //position
+    //transform information
     private Vector2Int boardPos;
     private static readonly Vector3 defaultScale = new Vector3(4.4f, 4.4f, 4.4f);
     public static readonly float masterGridOffset = -3.5f;
+    private bool hasMoved = false;
 
-    private bool blackTurn;
-
-    //sprite references
+    //declarations of sprite refs.
     [SerializeField] private Sprite blackKing, blackQueen, blackBishop, blackKnight, blackRook, blackPawn;
     [SerializeField] private Sprite whiteKing, whiteQueen, whiteBishop, whiteKnight, whiteRook, whitePawn;
 
@@ -40,23 +38,23 @@ public class Chessman : MonoBehaviour
     [SerializeField] private Colours colour;
     [SerializeField] private Types type;
 
-    
+    public Vector2Int BoardCoords { get => boardPos; set => boardPos = value; }
     public int XBoard { get => boardPos.x; set => boardPos.x = value; }
     public int YBoard { get => boardPos.y; set => boardPos.y = value; }
     public Colours Colour { get => colour; set => colour = value; }
     public Types Type { get => type; set => type = value; }
-    public Vector2Int BoardCoords { get => boardPos; set => boardPos = value; }
+    public bool HasMoved { get => hasMoved; set => hasMoved = value; }
 
 
     // Start is called before the first frame update
     void Start()
     {
         gameObject.transform.localScale = defaultScale;
-        //CalibrateWorldPos();
-        InitBoardPos();
-
+        CalibrateWorldPos();
+        InitBoardPosFromWorldCoordinates();
         Game.IndexChessman(gameObject);
-        Activate();
+        Game.AddPieceToMatrix(gameObject);
+        Render();
     }
 
     // Update is called once per frame
@@ -65,18 +63,23 @@ public class Chessman : MonoBehaviour
         
     }
 
-    public void Activate()
+    /// <summary>
+    /// Visually activates the chessman.
+    /// </summary>
+    public void Render()
     {
         SetWorldCoords();
         SelectSprite();
     }
 
-    //Selects the sprite of the piece based on a 2-D enumeration
+    /// <summary>
+    /// Selects the sprite of the piece based on a 2-D enumeration.
+    /// </summary>
     public void SelectSprite()
     {
         if (this.Colour == Colours.Black)
         {
-            //this is incredibly dumb architecturally but it does means that I don't have to use as many scripts.
+            //this is incredibly dumb architecturally but it does mean that I don't have to use as many scripts.
             switch (this.Type)
             {
                 case Types.King:
@@ -126,6 +129,10 @@ public class Chessman : MonoBehaviour
     }
 
     //for changing the world transform of a piece
+    /// <summary>
+    /// Changes the world transform of a piece.
+    /// This method is called in <c>SetBoardPos()</c>, so it is unlikely that this method should be called by itself.
+    /// </summary>
     private void SetWorldCoords()
     {
         float x = XBoard;
@@ -137,11 +144,16 @@ public class Chessman : MonoBehaviour
         gameObject.transform.position = new Vector3(x, y, -1.0f);
     }
 
-    //for changing the backing coords of a piece
+    /// <summary>
+    /// <para>Func: SetBoardPos</para>
+    /// Changes the backing coordinates of the chessman.
+    /// *This method will call IndexChessman and also update the chessman's world coordinates.*
+    /// </summary>
+    /// <param name="coords"></param>
+    /// <returns></returns>
     public bool SetBoardPos(Vector2Int coords)
     {
-        if(coords.x > Game.BoardXYMax || coords.x > Game.BoardXYMin 
-            || coords.y > Game.BoardXYMax || coords.y > Game.BoardXYMin
+        if(!Game.PositionIsValid(coords.x, coords.y)
             || Game.BoardMatrix[coords.x, coords.y] != null)
         {
             return false;
@@ -151,12 +163,15 @@ public class Chessman : MonoBehaviour
         boardPos.y = coords.y;
 
         Game.IndexChessman(gameObject);
+        SetWorldCoords();
 
         return true;
     }
 
-    //initializes board position by the approx position of a piece on the board at compile time
-    private void InitBoardPos()
+    /// <summary>
+    /// Initializes board position by the approimatei position of a piece on the board at compile time.
+    /// </summary>
+    private void InitBoardPosFromWorldCoordinates()
     {
         Vector2Int rawPos = new Vector2Int((int)(gameObject.transform.position.x + Game.boardOffset), 
             (int)(gameObject.transform.position.y + Game.boardOffset));
@@ -164,13 +179,288 @@ public class Chessman : MonoBehaviour
         BoardCoords = rawPos;
     }
 
-    //in case pieces are slightly misaligned
+    /// <summary>
+    /// To be called in case pieces are slightly misaligned.
+    /// </summary>
     internal void CalibrateWorldPos()
     {
         Vector3 worldTransform = gameObject.transform.position;
         worldTransform.x = Mathf.Floor(worldTransform.x) + 0.5f;
-        worldTransform.y = Mathf.Floor(worldTransform.y) - 0.5f;
+        worldTransform.y = Mathf.Floor(worldTransform.y) + 0.5f;
+        worldTransform.z = -1;
 
         gameObject.transform.position = worldTransform;
+    }
+
+    private void OnMouseUp()
+    {
+        //when a chess piece is clicked, kill all existing moveplates
+        //and spawn new ones corresponding to this chess piece
+        DestroyMovePlates();
+        InitializeMovePlates();
+    }
+
+    /// <summary>
+    /// This deletes all existing moveplates on the board.
+    /// </summary>
+    private void DestroyMovePlates()
+    {
+        GameObject[] movePlates = GameObject.FindGameObjectsWithTag("MovePlate");
+        for(int i = 0; i < movePlates.Length; i++)
+        {
+            Destroy(movePlates[i]);
+        }
+    }
+
+    /// <summary>
+    /// <para>Func: InitializeMovePlates</para>
+    /// This will instatntiate moveplates appropriate for the type of the chessman.
+    /// </summary>
+    private void InitializeMovePlates()
+    {
+        switch (this.Type)
+        {
+
+            case (Types.Knight):
+                KnightMovePlates();
+                break;
+            case (Types.Pawn):
+                if(this.Colour == Colours.Black)
+                {
+                    PawnMovePlate(XBoard, YBoard - 1);
+                    break;
+                }
+                else
+                {
+                    PawnMovePlate(XBoard, YBoard + 1);
+                    break;
+                }
+            //we can do better than this. TODO: refactor
+            case (Types.Bishop):
+                LineMovePlates(1, 1);
+                LineMovePlates(1, -1);
+                LineMovePlates(-1, 1);
+                LineMovePlates(-1, -1);
+                break;
+            case (Types.Rook):
+                LineMovePlates(1, 0);
+                LineMovePlates(0, 1);
+                LineMovePlates(-1, 1);
+                LineMovePlates(0, -1);
+                break;
+            case (Types.Queen):
+                LineMovePlates(1, 0);
+                LineMovePlates(0, 1);
+                LineMovePlates(1, 1);
+                LineMovePlates(-1, 0);
+                LineMovePlates(0, -1);
+                LineMovePlates(-1, -1);
+                LineMovePlates(-1, 1);
+                LineMovePlates(1, -1);
+                break;
+            case (Types.King):
+                CircleMovePlates();
+                break;
+        }
+    }
+
+    /// <summary>
+    /// The moveplate pattern instantiation function for bishops, queens, and rooks.
+    /// </summary>
+    private void LineMovePlates(int xIncr, int yIncr)
+    {
+        //start a square away
+        int x = XBoard + xIncr;
+        int y = YBoard + yIncr;
+
+        //generate move plates in the specified direction until there's a piece
+        //or we reach end of board
+        while(Game.PositionIsValid(x, y) && Game.PieceAtPosition(x, y) == null)
+        {
+            PlaceMovePlate(x, y);
+            x += xIncr;
+            y += yIncr;
+        }
+
+        //at the end of the attack path, if the position is valid there must be a piece.
+        //hence, if the piece is an enemy, lay down an attack square
+        if(Game.PositionIsValid(x, y) && (Game.PieceAtPosition(x, y).GetComponent<Chessman>().Colour != this.Colour))
+        {
+            PlaceAttackPlate(x, y);
+        }
+    }
+
+    /// <summary>
+    /// The moveplate pattern instantiation function for pawns.
+    /// </summary>
+    private void PawnMovePlate(int x, int y)
+    {
+        //handles first move case.
+        int startExtraMove = Colour == Colours.Black ? -1 : 1;
+
+        //pawns only move forward relative to boardside,
+        //so this function expects that the correct arguments are given.
+        if(Game.PositionIsValid(x, y))
+        {
+            //empty forward means move
+            if(Game.PieceAtPosition(x, y) == null)
+            {
+                PlaceMovePlate(x, y);
+            }
+
+            if(Game.PieceAtPosition(x + startExtraMove, y + startExtraMove) == null && !HasMoved)
+            {
+                PlaceMovePlate(x + startExtraMove, y + startExtraMove);
+            }
+
+            else //capture case
+            {
+                int directionMod = 1;
+
+                //check forward squares twice; once for right and once for left
+                for(int i = 0; i < 1; i++)
+                {
+                    int realX = x + directionMod;
+                    GameObject target = Game.PieceAtPosition(realX, y);
+                    Colours targetColour = target.GetComponent<Chessman>().Colour;
+
+                    //if the spot is valid, has a piece, and contains an enemy, place attack plate
+                    if (Game.PositionIsValid(realX, y)
+                        && (target != null)
+                        && (targetColour != Colour))
+                    {
+                        PlaceAttackPlate(realX, y);
+                    }
+                    //switch to left
+                    directionMod *= -1;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The moveplate pattern instantiation function for kings.
+    /// </summary>
+    private void CircleMovePlates()
+    {
+        int plateX;
+        int plateY;
+        //for all squares around the king
+        for (int i = -1; i <= 1; i++)
+        {
+            for (int j = -1; j <= 1; j++)
+            {
+                //except for the king himself
+                if (i != 0 || j != 0) 
+                {
+                    //place the correct plate type if possible
+                    plateX = XBoard + i;
+                    plateY = YBoard + j;
+                    PointMovePlate(plateX, plateY);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The moveplate pattern instantiation function for knights.
+    /// </summary>
+    private void KnightMovePlates()
+    {
+        int xOffset = 2;
+        int yOffset = 1;
+        int plateX;
+        int plateY;
+
+        //I stand by my assertion that this is better than copy pasting the method call 8 times.
+        
+        //for all of the correct squares around the knight
+        for (int i = 0; i < 1; i++)
+        {
+            for (int j = 0; j < 1; j++)
+            {
+                for (int k = 0; k < 1; k++)
+                {
+                    //place the correct plate type if possible
+                    plateX = XBoard + xOffset;
+                    plateY = YBoard + yOffset;
+                    PointMovePlate(plateX, plateY);
+                    yOffset *= -1;
+                }
+                xOffset *= -1;
+            }
+            BitSwapInts(ref xOffset, ref yOffset);
+        }
+    }
+
+    /// <summary>
+    /// This function wraps validity check and attack type checks for moveplate generation in one function.
+    /// Unfortunately, as it is, it only works properly for the king and knight.
+    /// </summary>
+    /// <param name="x">The board x coord.</param>
+    /// <param name="y">The board y coord.</param>
+    public void PointMovePlate(int x, int y)
+    {
+        if (Game.PositionIsValid(x, y))
+        {
+            GameObject pieceInSquare = Game.PieceAtPosition(x, y);
+
+            if (pieceInSquare == null)
+            {
+                PlaceMovePlate(x, y);
+            }
+            else if (pieceInSquare.GetComponent<Chessman>().Colour != this.Colour)
+            {
+                PlaceAttackPlate(x, y);
+            }
+        }
+    }
+
+    /// <summary>
+    /// This function passes two signed ints by reference and swaps their values.
+    /// </summary>
+    /// <param name="i">The first integer.</param>
+    /// <param name="j">The second integer.</param>
+    private void BitSwapInts(ref int i, ref int j)
+    {
+        i ^= j;
+        j ^= i;
+        i ^= j;
+    }
+
+    /// <summary>
+    /// Places an move-type plate at the specified board location.
+    /// </summary>
+    /// <param name="x">The board x coord.</param>
+    /// <param name="y">The board y coord.</param>
+    private MovePlate PlaceMovePlate(int x, int y)
+    {
+        Vector2Int platePos = new Vector2Int(x, y);
+
+        float worldX = x;
+        float worldY = y;
+
+        worldX += masterGridOffset;
+        worldY += masterGridOffset;
+        Vector3 plateWorldPos = new Vector3(worldX, worldY, -1.0f);
+
+        GameObject nMovePlate = Instantiate(movePlatePrefab, plateWorldPos, Quaternion.identity);
+
+        MovePlate movePlate = nMovePlate.GetComponent<MovePlate>();
+        movePlate.ParentPiece = gameObject;
+        movePlate.SetCoords(platePos);
+
+        return movePlate;
+    }
+
+    /// <summary>
+    /// Places an attack-type plate at the specified board location.
+    /// </summary>
+    /// <param name="x">The board x coord.</param>
+    /// <param name="y">The board y coord.</param>
+    private void PlaceAttackPlate(int x, int y)
+    {
+        MovePlate movePlate = PlaceMovePlate(x, y);
+        movePlate.attackSquare = true;
     }
 }

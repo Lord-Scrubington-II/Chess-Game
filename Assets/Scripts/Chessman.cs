@@ -11,6 +11,7 @@ public class Chessman : MonoBehaviour
     //transform information
     private Vector2Int boardPos;
     private static readonly Vector3 defaultScale = new Vector3(4.4f, 4.4f, 4.4f);
+    public static readonly float chessmanZ = -1.0f;
     public static readonly float masterGridOffset = -3.5f;
     private bool hasMoved = false;
 
@@ -141,7 +142,7 @@ public class Chessman : MonoBehaviour
         x += masterGridOffset;
         y += masterGridOffset;
 
-        gameObject.transform.position = new Vector3(x, y, -1.0f);
+        gameObject.transform.position = new Vector3(x, y, chessmanZ);
     }
 
     /// <summary>
@@ -245,18 +246,19 @@ public class Chessman : MonoBehaviour
             case (Types.Rook):
                 LineMovePlates(1, 0);
                 LineMovePlates(0, 1);
-                LineMovePlates(-1, 1);
+                LineMovePlates(-1, 0);
                 LineMovePlates(0, -1);
                 break;
             case (Types.Queen):
                 LineMovePlates(1, 0);
                 LineMovePlates(0, 1);
-                LineMovePlates(1, 1);
                 LineMovePlates(-1, 0);
                 LineMovePlates(0, -1);
-                LineMovePlates(-1, -1);
-                LineMovePlates(-1, 1);
+
+                LineMovePlates(1, 1);
                 LineMovePlates(1, -1);
+                LineMovePlates(-1, 1);
+                LineMovePlates(-1, -1);
                 break;
             case (Types.King):
                 CircleMovePlates();
@@ -295,7 +297,7 @@ public class Chessman : MonoBehaviour
     /// </summary>
     private void PawnMovePlate(int x, int y)
     {
-        //handles first move case.
+        //for handling first move case.
         int startExtraMove = Colour == Colours.Black ? -1 : 1;
 
         //pawns only move forward relative to boardside,
@@ -308,32 +310,36 @@ public class Chessman : MonoBehaviour
                 PlaceMovePlate(x, y);
             }
 
-            if(Game.PieceAtPosition(x + startExtraMove, y + startExtraMove) == null && !HasMoved)
+            //handle first move case
+            int bonusY = y + startExtraMove;
+            if (Game.PositionIsValid(x, bonusY) 
+                && Game.PieceAtPosition(x, bonusY) == null 
+                && Game.PieceAtPosition(x, y) == null 
+                && !HasMoved)
             {
-                PlaceMovePlate(x + startExtraMove, y + startExtraMove);
+                PlaceMovePlate(x, bonusY);
             }
 
-            else //capture case
+            //capture case
+
+            int directionMod = 1;
+
+            //check forward squares twice; once for right and once for left
+            for(int i = 0; i < 2; i++)
             {
-                int directionMod = 1;
-
-                //check forward squares twice; once for right and once for left
-                for(int i = 0; i < 1; i++)
-                {
-                    int realX = x + directionMod;
+                int realX = x + directionMod;
+                if (Game.PositionIsValid(realX, y)){
                     GameObject target = Game.PieceAtPosition(realX, y);
-                    Colours targetColour = target.GetComponent<Chessman>().Colour;
-
+                    //Colours targetColour = target.GetComponent<Chessman>().Colour;
+                    
                     //if the spot is valid, has a piece, and contains an enemy, place attack plate
-                    if (Game.PositionIsValid(realX, y)
-                        && (target != null)
-                        && (targetColour != Colour))
+                    if ((target != null) && (target.GetComponent<Chessman>().Colour != Colour))
                     {
                         PlaceAttackPlate(realX, y);
                     }
-                    //switch to left
-                    directionMod *= -1;
                 }
+                //switch to left
+                directionMod = directionMod * -1;
             }
         }
     }
@@ -375,11 +381,11 @@ public class Chessman : MonoBehaviour
         //I stand by my assertion that this is better than copy pasting the method call 8 times.
         
         //for all of the correct squares around the knight
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < 2; i++)
         {
-            for (int j = 0; j < 1; j++)
+            for (int j = 0; j < 2; j++)
             {
-                for (int k = 0; k < 1; k++)
+                for (int k = 0; k < 2; k++)
                 {
                     //place the correct plate type if possible
                     plateX = XBoard + xOffset;
@@ -442,7 +448,7 @@ public class Chessman : MonoBehaviour
 
         worldX += masterGridOffset;
         worldY += masterGridOffset;
-        Vector3 plateWorldPos = new Vector3(worldX, worldY, -1.0f);
+        Vector3 plateWorldPos = new Vector3(worldX, worldY, MovePlate.movePlateZ);
 
         GameObject nMovePlate = Instantiate(movePlatePrefab, plateWorldPos, Quaternion.identity);
 

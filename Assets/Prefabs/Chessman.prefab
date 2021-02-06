@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8262562627949744997}
   - component: {fileID: 1725196966}
   - component: {fileID: 5564088752780449180}
+  - component: {fileID: 4801113666281832573}
   m_Layer: 0
   m_Name: Chessman
   m_TagString: Untagged
@@ -95,8 +96,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9064e14f1cbd50f4e931456a8e700824, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movePlate: {fileID: 6045559784271317434, guid: 04e56b7322d2eab4081221c335b5f4fc,
-    type: 3}
+  movePlatePrefab: {fileID: 0}
   blackKing: {fileID: 21300000, guid: c7dddc76bc7f35d4597b0a083689ee3b, type: 3}
   blackQueen: {fileID: 21300000, guid: 640f0acf1fe70874d8156e87af58dacb, type: 3}
   blackBishop: {fileID: 21300000, guid: 3f5680dd548a1214b94fa78bcb606b14, type: 3}
@@ -118,8 +118,34 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8262562627949744996}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1c415e3654c8c604cb9c5a551d99bd38, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!61 &4801113666281832573
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8262562627949744996}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 0.2, y: 0.2}
+    newSize: {x: 0.2, y: 0.2}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 0.2, y: 0.2}
+  m_EdgeRadius: 0

@@ -8,6 +8,7 @@ public class MovePlate : MonoBehaviour
     Vector2Int boardPos; //board coords
     internal bool attackSquare = false;
     private SpriteRenderer renderer;
+    public static readonly float movePlateZ = -2.0f; //render these above pieces
 
     public GameObject ParentPiece 
     { 
@@ -32,21 +33,41 @@ public class MovePlate : MonoBehaviour
         {
             GameObject targetPiece = Game.PieceAtPosition(boardPos.x, boardPos.y);
 
-            if(targetPiece != null) Destroy(targetPiece);
+            if(targetPiece != null)
+            {
+                Game.UnIndexChessman(targetPiece);
+                Game.SetSquareEmpty(boardPos.x, boardPos.y);
+                Destroy(targetPiece);
+            }
+            else
+            {
+                throw new System.ObjectDisposedException("A chessman existed in backend when it should not.");
+            }
+           
         }
         Chessman parentChessman = ParentPiece.GetComponent<Chessman>();
         Game.SetSquareEmpty(parentChessman.XBoard, parentChessman.YBoard);
         parentChessman.SetBoardPos(boardPos);
         parentChessman.HasMoved = true;
-
         Game.AddPieceToMatrix(ParentPiece);
 
-        //parentChessman.DestroyMovePlate();
+        //TODO: broadcast event: piece moved/piece taken
+
+        DestroyMovePlates();
     }
 
     public void SetCoords(Vector2Int coords)
     {
         boardPos = coords;
+    }
+
+    private void DestroyMovePlates()
+    {
+        GameObject[] movePlates = GameObject.FindGameObjectsWithTag("MovePlate");
+        for (int i = 0; i < movePlates.Length; i++)
+        {
+            Destroy(movePlates[i]);
+        }
     }
 
     // Update is called once per frame

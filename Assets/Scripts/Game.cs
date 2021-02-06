@@ -9,8 +9,8 @@ public static class Game
 
     //positions and team for each chessman
     [SerializeField] private static GameObject[,] boardMatrix = new GameObject[8, 8];
-    [SerializeField] private static LinkedList<GameObject> playerWhite = new LinkedList<GameObject>();
-    [SerializeField] private static LinkedList<GameObject> playerBlack = new LinkedList<GameObject>();
+    [SerializeField] private static HashSet<GameObject> whiteArmy = new HashSet<GameObject>();
+    [SerializeField] private static HashSet<GameObject> blackArmy = new HashSet<GameObject>();
 
 
     private static bool blacksTurn = false;
@@ -32,8 +32,8 @@ public static class Game
     }
 
     public static GameObject[,] BoardMatrix { get => boardMatrix; private set => boardMatrix = value; }
-    public static LinkedList<GameObject> PlayerWhite { get => playerWhite; private set => playerWhite = value; }
-    public static LinkedList<GameObject> PlayerBlack { get => playerBlack; private set => playerBlack = value; }
+    public static HashSet<GameObject> PlayerWhite { get => whiteArmy; private set => whiteArmy = value; }
+    public static HashSet<GameObject> PlayerBlack { get => blackArmy; private set => blackArmy = value; }
     public static bool BlacksTurn { get => blacksTurn; private set => blacksTurn = value; }
 
     //legacy method
@@ -43,7 +43,7 @@ public static class Game
         boardMatrix = new GameObject[8, 8];
 
 
-        foreach (GameObject piece in playerWhite)
+        foreach (GameObject piece in whiteArmy)
         {
             if (piece != null)
             {
@@ -57,7 +57,7 @@ public static class Game
             }
         }
 
-        foreach (GameObject piece in playerBlack)
+        foreach (GameObject piece in blackArmy)
         {
             if (piece != null)
             {
@@ -97,48 +97,88 @@ public static class Game
         return newChessman;
     }
 
-    //adds chessman to the linkedlists that comprise player armies
+
+    /// <summary>
+    /// Adds chessman to the hashsets that comprise player armies.
+    /// </summary>
+    /// <param name="piece">The piece to be indexed.</param>
+    /// <returns>The colour of the chessman added.</returns>
     public static Chessman.Colours IndexChessman(GameObject piece)
     {
-        //not very smart, but it prevents duplicates of the same chess piece from existing,
-        //and also ensures that new chesspieces get added to the masterlists
-        //if (playerBlack.Contains(piece)) Game.PlayerBlack.Remove(piece);
-        //if (playerWhite.Contains(piece)) Game.PlayerWhite.Remove(piece);
-
         Chessman chessman = piece.GetComponent<Chessman>();
         if (chessman.Colour == Chessman.Colours.Black)
         {
-            if (!playerBlack.Contains(piece)) playerBlack.AddLast(piece);
+            blackArmy.Add(piece);
         }
         else
         {
-            if (!playerBlack.Contains(piece)) playerWhite.AddLast(piece);
+            whiteArmy.Add(piece);
         }
 
         return chessman.Colour;
     }
 
-    //adds chessman to the board matrix.
-    //this clobbers existing chessmen in the matrix, so be careful not to have unreferenced pieces.
+    /// <summary>
+    /// Removes chessman from the hashsets that comprise player armies.
+    /// </summary>
+    /// <param name="piece">The piece to be removed.</param>
+    /// <returns>The colour of the chessman removed.</returns>
+    public static Chessman.Colours UnIndexChessman(GameObject piece)
+    {
+
+        Chessman chessman = piece.GetComponent<Chessman>();
+        if (chessman.Colour == Chessman.Colours.Black)
+        {
+            blackArmy.Remove(piece);
+        }
+        else
+        {
+            whiteArmy.Remove(piece);
+        }
+
+        return chessman.Colour;
+    }
+
+    /// <summary>
+    /// Adds chessman to the board matrix. This clobbers existing chessmen in the matrix, so be careful not to have unreferenced pieces.
+    /// </summary>
+    /// <param name="newPiece">The piece to be added.</param>
     public static void AddPieceToMatrix(GameObject newPiece)
     {
         Chessman cm = newPiece.GetComponent<Chessman>();
         BoardMatrix[cm.XBoard, cm.YBoard] = newPiece;
     }
 
+    /// <summary>
+    /// Removes chessmen from the board matrix.
+    /// </summary>
+    /// <param name="x">Board x of removal target.</param>
+    /// <param name="y">Board y of removal target.</param>
     public static void SetSquareEmpty(int x, int y)
     {
         BoardMatrix[x, y] = null;
     }
 
+    /// <summary>
+    /// Returns chessman at the specified board location.
+    /// </summary>
+    /// <param name="x">>Board x of the query.</param>
+    /// <param name="y">>Board y of query.</param>
+    /// <returns>The chessman.</returns>
     public static GameObject PieceAtPosition(int x, int y)
     {
         return BoardMatrix[x, y];
     }
 
+    /// <summary>
+    /// Checks if the specifiec coordinates are on the board.
+    /// </summary>
+    /// <param name="x">The x coordinate.</param>
+    /// <param name="y">The y coordinate.</param>
+    /// <returns><c>true</c> if the position is on the board, <c>false</c> otherwise.</returns>
     public static bool PositionIsValid(int x, int y)
     {
-        if (x < 0 || y < 0 || x >= boardMatrix.Length || y >= boardMatrix.Length) return false;
+        if (x < 0 || y < 0 || x > BoardXYMax || y > BoardXYMax) return false;
         return true;
     }
 }

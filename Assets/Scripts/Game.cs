@@ -36,68 +36,6 @@ public static class Game
     public static HashSet<GameObject> PlayerBlack { get => blackArmy; private set => blackArmy = value; }
     public static bool BlacksTurn { get => blacksTurn; private set => blacksTurn = value; }
 
-    //legacy method
-    internal static void RefreshBoard()
-    {
-        //clear positions
-        boardMatrix = new GameObject[8, 8];
-
-
-        foreach (GameObject piece in whiteArmy)
-        {
-            if (piece != null)
-            {
-                //add to board matrix
-                Chessman chessman = piece.GetComponent<Chessman>();
-                if (BoardMatrix[chessman.XBoard, chessman.YBoard] != null)
-                {
-                    Console.WriteLine("Board Matrix Collision Detected.");
-                }
-                BoardMatrix[chessman.XBoard, chessman.YBoard] = piece;
-            }
-        }
-
-        foreach (GameObject piece in blackArmy)
-        {
-            if (piece != null)
-            {
-                //add to board matrix
-                Chessman chessman = piece.GetComponent<Chessman>();
-                if (BoardMatrix[chessman.XBoard, chessman.YBoard] != null)
-                {
-                    Console.WriteLine("Board Matrix Collision Detected.");
-                }
-                BoardMatrix[chessman.XBoard, chessman.YBoard] = piece;
-            }
-        }
-
-        /*
-        if (DEBUG)
-        {
-            foreach (GameObject g in boardMatrix)
-            {
-                SpriteRenderer s = g.GetComponent<SpriteRenderer>();
-                s.flipY = true;
-            }
-        }
-        */
-    }
-
-    //legacy method
-    private static GameObject Create(Chessman.Colours colour, Chessman.Types type, int x, int y)
-    {
-        GameObject newChessman = new GameObject();
-        Chessman chessman = newChessman.AddComponent<Chessman>();
-        chessman.Colour = colour;
-        chessman.Type = type;
-        chessman.XBoard = x;
-        chessman.YBoard = y;
-        //chessman.Activate();
-
-        return newChessman;
-    }
-
-
     /// <summary>
     /// Adds chessman to the hashsets that comprise player armies.
     /// </summary>
@@ -181,4 +119,68 @@ public static class Game
         if (x < 0 || y < 0 || x > BoardXYMax || y > BoardXYMax) return false;
         return true;
     }
+
+    //legacy method
+    internal static void RefreshBoard()
+    {
+        throw new System.NotSupportedException("This method is an unsupported legacy method.");
+
+        /*
+        //clear positions
+        boardMatrix = new GameObject[8, 8];
+
+
+        foreach (GameObject piece in whiteArmy)
+        {
+            if (piece != null)
+            {
+                //add to board matrix
+                Chessman chessman = piece.GetComponent<Chessman>();
+                if (BoardMatrix[chessman.XBoard, chessman.YBoard] != null)
+                {
+                    Console.WriteLine("Board Matrix Collision Detected.");
+                }
+                BoardMatrix[chessman.XBoard, chessman.YBoard] = piece;
+            }
+        }
+
+        foreach (GameObject piece in blackArmy)
+        {
+            if (piece != null)
+            {
+                //add to board matrix
+                Chessman chessman = piece.GetComponent<Chessman>();
+                if (BoardMatrix[chessman.XBoard, chessman.YBoard] != null)
+                {
+                    Console.WriteLine("Board Matrix Collision Detected.");
+                }
+                BoardMatrix[chessman.XBoard, chessman.YBoard] = piece;
+            }
+        }
+
+        
+        if (DEBUG)
+        {
+            foreach (GameObject g in boardMatrix)
+            {
+                SpriteRenderer s = g.GetComponent<SpriteRenderer>();
+                s.flipY = true;
+            }
+        }
+        */
+    }
+    //legacy method
+    private static GameObject Create(Chessman.Colours colour, Chessman.Types type, int x, int y)
+    {
+        GameObject newChessman = new GameObject();
+        Chessman chessman = newChessman.AddComponent<Chessman>();
+        chessman.Colour = colour;
+        chessman.Type = type;
+        chessman.XBoard = x;
+        chessman.YBoard = y;
+        //chessman.Activate();
+
+        return newChessman;
+    }
+
 }

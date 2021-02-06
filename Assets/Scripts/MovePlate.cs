@@ -10,6 +10,9 @@ public class MovePlate : MonoBehaviour
     private SpriteRenderer renderer;
     public static readonly float movePlateZ = -2.0f; //render these above pieces
 
+    /// <summary>
+    /// Assign or retrieve a pointer to the chess piece that created this moveplate.
+    /// </summary>
     public GameObject ParentPiece 
     { 
         get => parentPiece; 
@@ -27,6 +30,7 @@ public class MovePlate : MonoBehaviour
         }
     }
 
+    //When a moveplate is clicked, initiate the movement and attack sequences.
     public void OnMouseUp()
     {
         if (attackSquare)
@@ -56,11 +60,18 @@ public class MovePlate : MonoBehaviour
         DestroyMovePlates();
     }
 
+    /// <summary>
+    /// Sets the board coordinates of the moveplate.
+    /// </summary>
+    /// <param name="coords">The coordinates</param>
     public void SetCoords(Vector2Int coords)
     {
         boardPos = coords;
     }
 
+    /// <summary>
+    /// Removes all moveplates in the scene.
+    /// </summary>
     private void DestroyMovePlates()
     {
         GameObject[] movePlates = GameObject.FindGameObjectsWithTag("MovePlate");

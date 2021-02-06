@@ -199,6 +199,8 @@ public class Chessman : MonoBehaviour
         //and spawn new ones corresponding to this chess piece
         DestroyMovePlates();
         InitializeMovePlates();
+
+        //broadcast event: piece clicked
     }
 
     /// <summary>

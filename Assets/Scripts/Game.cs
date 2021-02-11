@@ -13,7 +13,7 @@ public static class Game
     [SerializeField] private static HashSet<GameObject> blackArmy = new HashSet<GameObject>();
 
 
-    private static bool blacksTurn = false;
+    private static Chessman.Colours playerTurn = Chessman.Colours.White;
     private static bool gameOver = false;
     public static readonly int BoardXYMax = 7;
     public static readonly int BoardXYMin = 0;
@@ -32,9 +32,9 @@ public static class Game
     }
 
     public static GameObject[,] BoardMatrix { get => boardMatrix; private set => boardMatrix = value; }
-    public static HashSet<GameObject> PlayerWhite { get => whiteArmy; private set => whiteArmy = value; }
-    public static HashSet<GameObject> PlayerBlack { get => blackArmy; private set => blackArmy = value; }
-    public static bool BlacksTurn { get => blacksTurn; private set => blacksTurn = value; }
+    public static HashSet<GameObject> WhiteArmy { get => whiteArmy; private set => whiteArmy = value; }
+    public static HashSet<GameObject> BlackArmy { get => blackArmy; private set => blackArmy = value; }
+    public static Chessman.Colours PlayerTurn { get => playerTurn; set => playerTurn = value; }
 
     /// <summary>
     /// Adds chessman to the hashsets that comprise player armies.
@@ -63,7 +63,6 @@ public static class Game
     /// <returns>The colour of the chessman removed.</returns>
     public static Chessman.Colours UnIndexChessman(GameObject piece)
     {
-
         Chessman chessman = piece.GetComponent<Chessman>();
         if (chessman.Colour == Chessman.Colours.Black)
         {
@@ -78,7 +77,7 @@ public static class Game
     }
 
     /// <summary>
-    /// Adds chessman to the board matrix. This clobbers existing chessmen in the matrix, so be careful not to have unreferenced pieces.
+    /// Adds chessman to the board matrix. This clobbers existing chessmen in the matrix, so be careful not to have unreferenced pieces in the scene.
     /// </summary>
     /// <param name="newPiece">The piece to be added.</param>
     public static void AddPieceToMatrix(GameObject newPiece)

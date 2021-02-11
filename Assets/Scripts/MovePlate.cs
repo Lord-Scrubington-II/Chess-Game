@@ -49,14 +49,17 @@ public class MovePlate : MonoBehaviour
             }
            
         }
+
+        //change the coordinates of the chessman in the backend
         Chessman parentChessman = ParentPiece.GetComponent<Chessman>();
         Game.SetSquareEmpty(parentChessman.XBoard, parentChessman.YBoard);
         parentChessman.SetBoardPos(boardPos);
         parentChessman.HasMoved = true;
         Game.AddPieceToMatrix(ParentPiece);
 
-        //TODO: broadcast event: piece moved/piece taken
-
+        //this is dumb, but it works.
+        //TODO: broadcast event: piece moved/piece taken, have the static class handle these
+        Game.PlayerTurn = Game.PlayerTurn == Chessman.Colours.Black ? Chessman.Colours.White : Chessman.Colours.Black;
         DestroyMovePlates();
     }
 

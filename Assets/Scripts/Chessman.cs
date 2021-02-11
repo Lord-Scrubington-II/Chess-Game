@@ -157,7 +157,8 @@ public class Chessman : MonoBehaviour
         if(!Game.PositionIsValid(coords.x, coords.y)
             || Game.BoardMatrix[coords.x, coords.y] != null)
         {
-            return false;
+            throw new IndexOutOfRangeException("Game attempted to insert chessman " + getName() + " at board coordinates " + coords.ToString());
+            //return false;
         }
 
         boardPos.x = coords.x;
@@ -197,8 +198,11 @@ public class Chessman : MonoBehaviour
     {
         //when a chess piece is clicked, kill all existing moveplates
         //and spawn new ones corresponding to this chess piece
-        DestroyMovePlates();
-        InitializeMovePlates();
+        if(Game.PlayerTurn == this.Colour)
+        {
+            DestroyMovePlates();
+            InitializeMovePlates();
+        }
 
         //broadcast event: piece clicked
     }
@@ -217,7 +221,7 @@ public class Chessman : MonoBehaviour
 
     /// <summary>
     /// <para>Func: InitializeMovePlates</para>
-    /// This will instatntiate moveplates appropriate for the type of the chessman.
+    /// This will instantiate moveplates appropriate for the type of the chessman.
     /// </summary>
     private void InitializeMovePlates()
     {
@@ -238,34 +242,49 @@ public class Chessman : MonoBehaviour
                     PawnMovePlate(XBoard, YBoard + 1);
                     break;
                 }
-            //we can do better than this. TODO: refactor
             case (Types.Bishop):
-                LineMovePlates(1, 1);
-                LineMovePlates(1, -1);
-                LineMovePlates(-1, 1);
-                LineMovePlates(-1, -1);
+                BishopMovePlates();
                 break;
             case (Types.Rook):
-                LineMovePlates(1, 0);
-                LineMovePlates(0, 1);
-                LineMovePlates(-1, 0);
-                LineMovePlates(0, -1);
+                RookMovePlates();
                 break;
             case (Types.Queen):
-                LineMovePlates(1, 0);
-                LineMovePlates(0, 1);
-                LineMovePlates(-1, 0);
-                LineMovePlates(0, -1);
-
-                LineMovePlates(1, 1);
-                LineMovePlates(1, -1);
-                LineMovePlates(-1, 1);
-                LineMovePlates(-1, -1);
+                RookMovePlates();
+                BishopMovePlates();
                 break;
             case (Types.King):
                 CircleMovePlates();
                 break;
         }
+    }
+
+    private void RookMovePlates()
+    {
+        LineMovePlates(0, 1);
+        LineMovePlates(0, -1);
+        LineMovePlates(1, 0);
+        LineMovePlates(-1, 0);
+    }
+
+    private void BishopMovePlates()
+    {
+        int xIncr = 1;
+        int yIncr = 1;
+        for (int i = 0; i < 2; i++)
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                LineMovePlates(xIncr, yIncr);
+                xIncr *= -1;
+            }
+            yIncr *= -1;
+        }
+        /*
+        LineMovePlates(1, 1);
+        LineMovePlates(1, -1);
+        LineMovePlates(-1, 1);
+        LineMovePlates(-1, -1);
+        */
     }
 
     /// <summary>
@@ -353,15 +372,15 @@ public class Chessman : MonoBehaviour
     {
         int plateX;
         int plateY;
-        //for all squares around the king
+        //for all squares around the king...
         for (int i = -1; i <= 1; i++)
         {
             for (int j = -1; j <= 1; j++)
             {
-                //except for the king himself
+                //except for the king himself...
                 if (i != 0 || j != 0) 
                 {
-                    //place the correct plate type if possible
+                    //place the correct plate type if possible.
                     plateX = XBoard + i;
                     plateY = YBoard + j;
                     PointMovePlate(plateX, plateY);
@@ -382,14 +401,14 @@ public class Chessman : MonoBehaviour
 
         //I stand by my assertion that this is better than copy pasting the method call 8 times.
         
-        //for all of the correct squares around the knight
+        //for all of the correct squares around the knight...
         for (int i = 0; i < 2; i++)
         {
             for (int j = 0; j < 2; j++)
             {
                 for (int k = 0; k < 2; k++)
                 {
-                    //place the correct plate type if possible
+                    //place the correct plate type if possible.
                     plateX = XBoard + xOffset;
                     plateY = YBoard + yOffset;
                     PointMovePlate(plateX, plateY);
@@ -445,15 +464,18 @@ public class Chessman : MonoBehaviour
     {
         Vector2Int platePos = new Vector2Int(x, y);
 
+        //set world transform based on board cooardinates
         float worldX = x;
         float worldY = y;
-
         worldX += masterGridOffset;
         worldY += masterGridOffset;
         Vector3 plateWorldPos = new Vector3(worldX, worldY, MovePlate.movePlateZ);
 
+        //instantiation of move plate, childed to this piece
         GameObject nMovePlate = Instantiate(movePlatePrefab, plateWorldPos, Quaternion.identity);
+        nMovePlate.transform.parent = gameObject.transform;
 
+        //set the board coordinates of the actual moveplate
         MovePlate movePlate = nMovePlate.GetComponent<MovePlate>();
         movePlate.ParentPiece = gameObject;
         movePlate.SetCoords(platePos);
@@ -470,5 +492,10 @@ public class Chessman : MonoBehaviour
     {
         MovePlate movePlate = PlaceMovePlate(x, y);
         movePlate.attackSquare = true;
+    }
+
+    public string getName()
+    {
+        return Colour.ToString() + " " + Type.ToString();
     }
 }

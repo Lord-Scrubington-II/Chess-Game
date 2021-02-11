@@ -19,27 +19,37 @@ public class EditorUtils : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //add self to hashset
-        allChessmen.Add(gameObject);
-
+        
         //get pointer to the chessman component
         chessman = gameObject.GetComponent<Chessman>();
-        
-        //snap to grid and select sprite
-        SnapToGrid(chessman);
-        chessman.SelectSprite();
-        chessman.name = chessman.Colour.ToString() + " " + chessman.Type.ToString() + " " + chessman.BoardCoords.ToString();
-    }
-    
 
-    private void editorCalibrateWorldPos()
+        HandleChessmen();
+    }
+
+    /// <summary>
+    /// To be called if this script is attached to a chessman.
+    /// </summary>
+    private void HandleChessmen()
     {
-        Chessman cm = gameObject.GetComponent<Chessman>();
-        cm.CalibrateWorldPos();
+
+        //snap to grid and select sprite
+        if (chessman != null)
+        {
+            //add self to hashset
+            allChessmen.Add(gameObject);
+
+            //snap to grid, update sprite and name
+            SnapToGrid(chessman);
+            chessman.SelectSprite();
+            chessman.name = chessman.Colour.ToString() + " " + chessman.Type.ToString() + " " + chessman.BoardCoords.ToString();
+        }
     }
 
-    //Snaps chessmen to the grid, which should be aligned with the board. 
-    //Updates the transform and backing coordinates of the chessman as well.
+    /// <summary>
+    /// Snaps chessmen to the grid, which should be aligned with the board. 
+    /// Updates the transform and backing coordinates of the chessman as well.
+    /// </summary>
+    /// <param name="chessman">Pointer to a chessman component.</param>
     private void SnapToGrid(Chessman chessman)
     {
         Vector3 snapPos;

@@ -4,5 +4,32 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/Main Menu.unity
+    guid: 86cd8e9c24834bd409e25254152e74f7
+  - enabled: 1
+    path: Assets/Scenes/Actual Chess.unity
+    guid: 2cda990e2423bbf4892e6590ba056729
+  - enabled: 1
+    path: Assets/Scenes/Level 1.unity
+    guid: 66eb8994d05d91f43b703db633392b4e
+  - enabled: 1
+    path: Assets/Scenes/Level 2.unity
+    guid: 8dff97bc98a847c4d8d3fd12a2b2914d
+  - enabled: 1
+    path: Assets/Scenes/Level 3.unity
+    guid: cb38205b7e4983642a7d0e232e4fe460
+  - enabled: 1
+    path: Assets/Scenes/Level 4.unity
+    guid: 22b4b907d363e6840909221550f72a2f
+  - enabled: 1
+    path: Assets/Scenes/Level 5.unity
+    guid: 90a3161053e938843bcb500fcccf466f
+  - enabled: 1
+    path: Assets/Scenes/Pandemonium.unity
+    guid: 916132cc8ea7039439cd626f770b15ab
+  - enabled: 1
+    path: Assets/Scenes/Custom Bad Chess.unity
+    guid: 5fcc3eeecb6c67544b330e2999ef2c9d
   m_configObjects: {}

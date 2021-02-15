@@ -41,7 +41,7 @@ public class EditorUtils : MonoBehaviour
             //snap to grid, update sprite and name
             SnapToGrid(chessman);
             chessman.SelectSprite();
-            chessman.name = chessman.Colour.ToString() + " " + chessman.Type.ToString() + " " + chessman.BoardCoords.ToString();
+            chessman.name = chessman.ToString();
         }
     }
 

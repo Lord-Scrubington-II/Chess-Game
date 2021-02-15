@@ -2,18 +2,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+/// <summary>
+/// The Chessman component is to be attached to GameObjects that represent chessmen.
+/// </summary>
 public class Chessman : MonoBehaviour
 {
     //ref to the moveplate prefab
-    public GameObject movePlatePrefab;
+    [SerializeField] private GameObject movePlatePrefab;
 
     //transform information
     private Vector2Int boardPos;
-    private static readonly Vector3 defaultScale = new Vector3(4.4f, 4.4f, 4.4f);
+    private static readonly Vector3 DefaultScale = new Vector3(4.4f, 4.4f, 4.4f);
     public static readonly float chessmanZ = -1.0f;
     public static readonly float masterGridOffset = -3.5f;
     private bool hasMoved = false;
+    private delegate void IndexPossibleMoves(Chessman piece, GameObject[,] boardMatrix);
 
     //declarations of sprite refs.
     [SerializeField] private Sprite blackKing, blackQueen, blackBishop, blackKnight, blackRook, blackPawn;
@@ -30,9 +33,9 @@ public class Chessman : MonoBehaviour
     {
         King,
         Queen,
+        Rook,
         Bishop,
         Knight,
-        Rook,
         Pawn
     }
 
@@ -40,8 +43,8 @@ public class Chessman : MonoBehaviour
     [SerializeField] private Types type;
 
     public Vector2Int BoardCoords { get => boardPos; set => boardPos = value; }
-    public int XBoard { get => boardPos.x; set => boardPos.x = value; }
-    public int YBoard { get => boardPos.y; set => boardPos.y = value; }
+    public int File { get => boardPos.x; set => boardPos.x = value; }
+    public int Rank { get => boardPos.y; set => boardPos.y = value; }
     public Colours Colour { get => colour; set => colour = value; }
     public Types Type { get => type; set => type = value; }
     public bool HasMoved { get => hasMoved; set => hasMoved = value; }
@@ -50,7 +53,7 @@ public class Chessman : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        gameObject.transform.localScale = defaultScale;
+        gameObject.transform.localScale = DefaultScale;
         CalibrateWorldPos();
         InitBoardPosFromWorldCoordinates();
         Game.IndexChessman(gameObject);
@@ -87,19 +90,19 @@ public class Chessman : MonoBehaviour
                     gameObject.GetComponent<SpriteRenderer>().sprite = blackKing;
                     break;
                 case Types.Queen:
-                    this.GetComponent<SpriteRenderer>().sprite = blackQueen;
+                    gameObject.GetComponent<SpriteRenderer>().sprite = blackQueen;
                     break;
                 case Types.Bishop:
-                    this.GetComponent<SpriteRenderer>().sprite = blackBishop;
+                    gameObject.GetComponent<SpriteRenderer>().sprite = blackBishop;
                     break;
                 case Types.Knight:
-                    this.GetComponent<SpriteRenderer>().sprite = blackKnight;
+                    gameObject.GetComponent<SpriteRenderer>().sprite = blackKnight;
                     break;
                 case Types.Rook:
-                    this.GetComponent<SpriteRenderer>().sprite = blackRook;
+                    gameObject.GetComponent<SpriteRenderer>().sprite = blackRook;
                     break;
                 case Types.Pawn:
-                    this.GetComponent<SpriteRenderer>().sprite = blackPawn;
+                    gameObject.GetComponent<SpriteRenderer>().sprite = blackPawn;
                     break;
             }
         }
@@ -108,36 +111,36 @@ public class Chessman : MonoBehaviour
             switch (this.Type)
             {
                 case Types.King:
-                    this.GetComponent<SpriteRenderer>().sprite = whiteKing;
+                    gameObject.GetComponent<SpriteRenderer>().sprite = whiteKing;
                     break;
                 case Types.Queen:
-                    this.GetComponent<SpriteRenderer>().sprite = whiteQueen;
+                    gameObject.GetComponent<SpriteRenderer>().sprite = whiteQueen;
                     break;
                 case Types.Bishop:
-                    this.GetComponent<SpriteRenderer>().sprite = whiteBishop;
+                    gameObject.GetComponent<SpriteRenderer>().sprite = whiteBishop;
                     break;
                 case Types.Knight:
-                    this.GetComponent<SpriteRenderer>().sprite = whiteKnight;
+                    gameObject.GetComponent<SpriteRenderer>().sprite = whiteKnight;
                     break;
                 case Types.Rook:
-                    this.GetComponent<SpriteRenderer>().sprite = whiteRook;
+                    gameObject.GetComponent<SpriteRenderer>().sprite = whiteRook;
                     break;
                 case Types.Pawn:
-                    this.GetComponent<SpriteRenderer>().sprite = whitePawn;
+                    gameObject.GetComponent<SpriteRenderer>().sprite = whitePawn;
                     break;
             }
         }
     }
 
-    //for changing the world transform of a piece
+
     /// <summary>
     /// Changes the world transform of a piece.
     /// This method is called in <c>SetBoardPos()</c>, so it is unlikely that this method should be called by itself.
     /// </summary>
     private void SetWorldCoords()
     {
-        float x = XBoard;
-        float y = YBoard;
+        float x = File;
+        float y = Rank;
 
         x += masterGridOffset;
         y += masterGridOffset;
@@ -171,7 +174,7 @@ public class Chessman : MonoBehaviour
     }
 
     /// <summary>
-    /// Initializes board position by the approimatei position of a piece on the board at compile time.
+    /// Initializes board position by the approximate position of a piece on the board at compile time.
     /// </summary>
     private void InitBoardPosFromWorldCoordinates()
     {
@@ -196,21 +199,27 @@ public class Chessman : MonoBehaviour
 
     private void OnMouseUp()
     {
+        if(!Game.GameOver) ShowPossibleMoves();
+
+        //broadcast event: piece clicked
+    }
+
+    private void ShowPossibleMoves()
+    {
         //when a chess piece is clicked, kill all existing moveplates
         //and spawn new ones corresponding to this chess piece
-        if(Game.PlayerTurn == this.Colour)
+        if (Game.PlayerTurn == this.Colour)
         {
             DestroyMovePlates();
             InitializeMovePlates();
         }
-
-        //broadcast event: piece clicked
+        //during this time we should be adding all valid moves into a priority queue.
     }
 
     /// <summary>
     /// This deletes all existing moveplates on the board.
     /// </summary>
-    private void DestroyMovePlates()
+    public static void DestroyMovePlates()
     {
         GameObject[] movePlates = GameObject.FindGameObjectsWithTag("MovePlate");
         for(int i = 0; i < movePlates.Length; i++)
@@ -234,12 +243,12 @@ public class Chessman : MonoBehaviour
             case (Types.Pawn):
                 if(this.Colour == Colours.Black)
                 {
-                    PawnMovePlate(XBoard, YBoard - 1);
+                    PawnMovePlate(File, Rank - 1);
                     break;
                 }
                 else
                 {
-                    PawnMovePlate(XBoard, YBoard + 1);
+                    PawnMovePlate(File, Rank + 1);
                     break;
                 }
             case (Types.Bishop):
@@ -253,11 +262,19 @@ public class Chessman : MonoBehaviour
                 BishopMovePlates();
                 break;
             case (Types.King):
-                CircleMovePlates();
+                KingMovePlates();
                 break;
         }
     }
 
+    public List<Move> GenerateMoves()
+    {
+
+    }
+
+    /// <summary>
+    /// Rooks lay LineMovePlates() orthogonally.
+    /// </summary>
     private void RookMovePlates()
     {
         LineMovePlates(0, 1);
@@ -266,6 +283,9 @@ public class Chessman : MonoBehaviour
         LineMovePlates(-1, 0);
     }
 
+    /// <summary>
+    /// Bishops lay LineMovePlates() diagonally.
+    /// </summary>
     private void BishopMovePlates()
     {
         int xIncr = 1;
@@ -293,8 +313,8 @@ public class Chessman : MonoBehaviour
     private void LineMovePlates(int xIncr, int yIncr)
     {
         //start a square away
-        int x = XBoard + xIncr;
-        int y = YBoard + yIncr;
+        int x = File + xIncr;
+        int y = Rank + yIncr;
 
         //generate move plates in the specified direction until there's a piece
         //or we reach end of board
@@ -368,7 +388,7 @@ public class Chessman : MonoBehaviour
     /// <summary>
     /// The moveplate pattern instantiation function for kings.
     /// </summary>
-    private void CircleMovePlates()
+    private void KingMovePlates()
     {
         int plateX;
         int plateY;
@@ -378,15 +398,59 @@ public class Chessman : MonoBehaviour
             for (int j = -1; j <= 1; j++)
             {
                 //except for the king himself...
-                if (i != 0 || j != 0) 
+                if (i != 0 || j != 0)
                 {
                     //place the correct plate type if possible.
-                    plateX = XBoard + i;
-                    plateY = YBoard + j;
+                    plateX = File + i;
+                    plateY = Rank + j;
                     PointMovePlate(plateX, plateY);
                 }
             }
         }
+
+        //but also, suppose the king can castle...
+        KingCastleMovePlates();
+    }
+
+    private void KingCastleMovePlates()
+    {
+        
+        int kingsFile = this.File;
+        int kingsRank = this.Rank;
+        int x;
+        int y;
+
+        //if the king has not moved...
+        if (!this.hasMoved)
+        {
+            //for each of the two directions along the king's rank...
+            int step = 1;
+            for (int i = 0; i < 2; i++)
+            {
+                x = kingsFile + step;
+                y = kingsRank;
+
+                //search for another piece.
+                while (Game.PositionIsValid(x, y) && Game.PieceAtPosition(x, y) == null)
+                {
+                    x += step;
+                }
+
+                //if the piece exists... 
+                if (Game.PositionIsValid(x, y) && Game.BoardMatrix[x, y] != null)
+                {
+                    //and is a rook of the same colour that has also not moved...
+                    if (Game.BoardMatrix[x, y].GetComponent<Chessman>().Type == Types.Rook 
+                        && Game.BoardMatrix[x, y].GetComponent<Chessman>().Colour == Colour
+                        && !Game.BoardMatrix[x, y].GetComponent<Chessman>().HasMoved)
+                    {
+                        //then permit the king to castle.
+                        PlaceCastlePlate(x - step, y);
+                    }
+                }
+                step *= -1;
+            }
+        }    
     }
 
     /// <summary>
@@ -401,16 +465,16 @@ public class Chessman : MonoBehaviour
 
         //I stand by my assertion that this is better than copy pasting the method call 8 times.
         
-        //for all of the correct squares around the knight...
-        for (int i = 0; i < 2; i++)
+        
+        for (int i = 0; i < 2; i++) //for all of the correct squares
         {
-            for (int j = 0; j < 2; j++)
+            for (int j = 0; j < 2; j++) //forming an L-profile
             {
-                for (int k = 0; k < 2; k++)
+                for (int k = 0; k < 2; k++) //around the knight...
                 {
                     //place the correct plate type if possible.
-                    plateX = XBoard + xOffset;
-                    plateY = YBoard + yOffset;
+                    plateX = File + xOffset;
+                    plateY = Rank + yOffset;
                     PointMovePlate(plateX, plateY);
                     yOffset *= -1;
                 }
@@ -464,7 +528,7 @@ public class Chessman : MonoBehaviour
     {
         Vector2Int platePos = new Vector2Int(x, y);
 
-        //set world transform based on board cooardinates
+        //set world transform based on board coordinates
         float worldX = x;
         float worldY = y;
         worldX += masterGridOffset;
@@ -480,6 +544,8 @@ public class Chessman : MonoBehaviour
         movePlate.ParentPiece = gameObject;
         movePlate.SetCoords(platePos);
 
+        movePlate.MoveData = new Move(this, platePos, Game.ReducedBoardMatrix, false);
+
         return movePlate;
     }
 
@@ -491,11 +557,70 @@ public class Chessman : MonoBehaviour
     private void PlaceAttackPlate(int x, int y)
     {
         MovePlate movePlate = PlaceMovePlate(x, y);
-        movePlate.attackSquare = true;
+        movePlate.Type = MovePlate.PlateTypes.Attack;
+    }
+
+    /// <summary>
+    /// Places an castle-type plate at the specified board location.
+    /// </summary>
+    /// <param name="x">The board x coord.</param>
+    /// <param name="y">The board y coord.</param>
+    private void PlaceCastlePlate(int x, int y)
+    {
+        MovePlate movePlate = PlaceMovePlate(x, y);
+        movePlate.Type = MovePlate.PlateTypes.Castle;
+        movePlate.MoveData = new Move(this, movePlate.BoardPos, Game.ReducedBoardMatrix, false);
     }
 
     public string getName()
     {
         return Colour.ToString() + " " + Type.ToString();
+    }
+
+    /// <summary>
+    /// ToString() override for Chessmen.
+    /// </summary>
+    /// <returns>The Chessman as a string.</returns>
+    public override string ToString()
+    {
+        string sRep = getName() + " at (" + Game.BoardXAlias[this.BoardCoords.x] + ", " + (this.BoardCoords.y + 1) + ")\n";
+        return sRep;
+    }
+}
+
+public class DummyChessman
+{
+    private Chessman.Colours colour;
+    private Chessman.Types type;
+
+    public DummyChessman(Chessman.Colours theColour, Chessman.Types theType)
+    {
+        colour = theColour;
+        type = theType;
+    }
+
+    public Chessman.Colours Colour { 
+        get => colour; 
+        private set => colour = value; 
+    }
+
+    public Chessman.Types Type { 
+        get => type; 
+        private set => type = value; 
+    }
+
+    public string getName()
+    {
+        return Colour.ToString() + " " + Type.ToString();
+    }
+
+    /// <summary>
+    /// ToString() Override for Dummy Chessmen.
+    /// </summary>
+    /// <returns>The Dummy as a string.</returns>
+    public override string ToString()
+    {
+        string sRep = getName() + "\n";
+        return sRep;
     }
 }

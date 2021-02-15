@@ -96,7 +96,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9064e14f1cbd50f4e931456a8e700824, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movePlatePrefab: {fileID: 0}
+  movePlatePrefab: {fileID: 6045559784271317434, guid: 04e56b7322d2eab4081221c335b5f4fc,
+    type: 3}
   blackKing: {fileID: 21300000, guid: c7dddc76bc7f35d4597b0a083689ee3b, type: 3}
   blackQueen: {fileID: 21300000, guid: 640f0acf1fe70874d8156e87af58dacb, type: 3}
   blackBishop: {fileID: 21300000, guid: 3f5680dd548a1214b94fa78bcb606b14, type: 3}

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public static class Game
 {
@@ -428,13 +429,27 @@ public static class Game
     public static void WonGame(Chessman.Colours victor)
     {
         gameOver = true;
-
+        Text gameOverText;
+        Text returnText;
         //very weak architecture here. should be broadcasting an event.
-        Text gameOverText = GameObject.FindGameObjectWithTag("GameOverText").GetComponent<Text>();
-        Text returnText = GameObject.FindGameObjectWithTag("ReturnText").GetComponent<Text>();
-        gameOverText.enabled = true;
-        returnText.enabled = true;
+        GameObject GOTxt = GameObject.FindGameObjectWithTag("GameOverText");
+        GameObject RETxt = GameObject.FindGameObjectWithTag("ReturnText");
 
-        gameOverText.text = victor.ToString() + " is the Winner";
+        if (GOTxt != null && RETxt != null)
+        {
+            gameOverText = GOTxt.GetComponent<Text>();
+            returnText = RETxt.GetComponent<Text>();
+
+            gameOverText.enabled = true;
+            returnText.enabled = true;
+
+            gameOverText.text = victor.ToString() + " is the Winner";
+        }
+    }
+
+    public static void MainMenuBack()
+    {
+        ResetGame();
+        SceneManager.LoadScene(0);
     }
 }

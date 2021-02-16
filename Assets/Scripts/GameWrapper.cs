@@ -14,12 +14,12 @@ public class GameWrapper : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
-        //this should really be listening for an event that gets broadcasted by a chessman.
+        //this should really be listening for an event that gets broadcasted by a chessman,
         //better yet, dont even do this at all.
         if(Game.GameOver && Input.GetMouseButtonDown(0))
         {
-            SceneManager.LoadScene("Actual Chess"); // temp
+            //SceneManager.LoadScene("Actual Chess"); //TODO implement level loading
+            Game.MainMenuBack();
         }
     }
 }

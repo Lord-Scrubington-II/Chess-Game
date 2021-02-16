@@ -24,6 +24,6 @@ public class Board : MonoBehaviour
 
     private void OnMouseUp()
     {
-        Chessman.DestroyMovePlates();
+        Game.DestroyMovePlates();
     }
 }

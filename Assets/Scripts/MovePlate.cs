@@ -30,8 +30,16 @@ public class MovePlate : MonoBehaviour
         get => moveData; 
         set => moveData = value; 
     }
-    public PlateTypes Type { get => type; set => type = value; }
-    public Vector2Int BoardPos { get => boardPos; private set => boardPos = value; }
+
+    public PlateTypes Type { 
+        get => type; 
+        set => type = value; 
+    }
+
+    public Vector2Int BoardPos { 
+        get => boardPos; 
+        private set => boardPos = value; 
+    }
 
     public enum PlateTypes
     {
@@ -43,11 +51,12 @@ public class MovePlate : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        //somewhere around here, I should be making a new Move object.
-        //OnMouseUp() should call Play(Move m).
         ChooseColour();
     }
 
+    /// <summary>
+    /// Sets the colour of the Moveplate to red if it's an attack plate and green if it's a castle plate, yellow otherwise.
+    /// </summary>
     private void ChooseColour()
     {
         sRenderer = gameObject.GetComponent<SpriteRenderer>();
@@ -61,11 +70,40 @@ public class MovePlate : MonoBehaviour
         {
             //change colour to green
             sRenderer.color = new Color(0, 255, 0, 255);
+        } 
+        else
+        {
+            //change colour to yellow
+            sRenderer.color = new Color(255, 255, 0, 255);
         }
     }
 
     //When a moveplate is clicked, initiate the movement and attack sequences.
     public void OnMouseUp()
+    {
+        //PlayMovePlate();
+
+        //this is dumb, but it works.
+        //TODO: broadcast event: piece moved/piece taken, have the static class handle these
+        Game.Play(this.moveData);
+    }
+
+    /// <summary>
+    /// Sets the board coordinates of the moveplate.
+    /// </summary>
+    /// <param name="coords">The coordinates</param>
+    public void SetCoords(Vector2Int coords)
+    {
+        BoardPos = coords;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        
+    }
+
+    private void PlayMovePlate()
     {
         //TODO: this is very architectually prohibitive. Not to mention that it obfuscates moves from the backend.
         //This entire function needs to be refactored
@@ -76,7 +114,7 @@ public class MovePlate : MonoBehaviour
             MoveParentToMyLocation();
 
             //move rook to correct spot
-            
+
             //find the step direction to the empty square next to the king.
             //recall that this spot is guaranteed to exist if the king can castle
             int stepToCastleTarget = Game.PieceAtPosition(BoardPos.x - 1, BoardPos.y) == null ? 1 : -1;
@@ -89,13 +127,14 @@ public class MovePlate : MonoBehaviour
             //move the rook to the other side of the king
             Vector2Int castleBoardPos = new Vector2Int(BoardPos.x + stepToNewRookPos, BoardPos.y);
             Chessman castleChessman = castleTarget.GetComponent<Chessman>();
+
             Game.SetSquareEmpty(castleChessman.File, castleChessman.Rank);
             castleChessman.SetBoardPos(castleBoardPos);
             castleChessman.HasMoved = true;
             Game.AddPieceToMatrix(castleTarget);
 
         }
-        
+
         else
         {
 
@@ -109,7 +148,7 @@ public class MovePlate : MonoBehaviour
                     Game.UnIndexChessman(targetPiece);
                     Game.SetSquareEmpty(BoardPos.x, BoardPos.y);
 
-                    if(targetChessman.Type == Chessman.Types.King)
+                    if (targetChessman.Type == Chessman.Types.King)
                     {
                         Chessman.Colours winner = targetChessman.Colour == Chessman.Colours.White ? Chessman.Colours.Black : Chessman.Colours.White;
                         Game.WonGame(winner);
@@ -129,10 +168,9 @@ public class MovePlate : MonoBehaviour
 
         }
 
-        //this is dumb, but it works.
-        //TODO: broadcast event: piece moved/piece taken, have the static class handle these
+
         Game.NextTurn();
-        DestroyMovePlates();
+        Game.DestroyMovePlates();
     }
 
     private void MoveParentToMyLocation()
@@ -144,31 +182,4 @@ public class MovePlate : MonoBehaviour
         Game.AddPieceToMatrix(ParentPiece);
     }
 
-
-    /// <summary>
-    /// Sets the board coordinates of the moveplate.
-    /// </summary>
-    /// <param name="coords">The coordinates</param>
-    public void SetCoords(Vector2Int coords)
-    {
-        BoardPos = coords;
-    }
-
-    /// <summary>
-    /// Removes all moveplates in the scene.
-    /// </summary>
-    private static void DestroyMovePlates()
-    {
-        GameObject[] movePlates = GameObject.FindGameObjectsWithTag("MovePlate");
-        for (int i = 0; i < movePlates.Length; i++)
-        {
-            Destroy(movePlates[i]);
-        }
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

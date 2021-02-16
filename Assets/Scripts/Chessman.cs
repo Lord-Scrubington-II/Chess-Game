@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
 /// <summary>
 /// The Chessman component is to be attached to GameObjects that represent chessmen.
 /// </summary>
-public class Chessman : MonoBehaviour
+public class Chessman : MonoBehaviour, IComputableChessman
 {
     //ref to the moveplate prefab
     [SerializeField] private GameObject movePlatePrefab;
@@ -158,9 +158,11 @@ public class Chessman : MonoBehaviour
     public bool SetBoardPos(Vector2Int coords)
     {
         if(!Game.PositionIsValid(coords.x, coords.y)
-            || Game.BoardMatrix[coords.x, coords.y] != null)
+            || Game.PieceAtPosition(coords.x, coords.y) != null)
         {
-            throw new IndexOutOfRangeException("Game attempted to insert chessman " + getName() + " at board coordinates " + coords.ToString());
+            throw new IndexOutOfRangeException("Game attempted to insert chessman " + GetName() 
+                + " at board coordinates " + coords.ToString()
+                + " which contains " + Game.PieceAtPosition(coords.x, coords.y));
             //return false;
         }
 
@@ -210,10 +212,9 @@ public class Chessman : MonoBehaviour
         //and spawn new ones corresponding to this chess piece
         if (Game.PlayerTurn == this.Colour)
         {
-            DestroyMovePlates();
+            Game.DestroyMovePlates();
             InitializeMovePlates();
         }
-        //during this time we should be adding all valid moves into a priority queue.
     }
 
     /// <summary>
@@ -265,11 +266,6 @@ public class Chessman : MonoBehaviour
                 KingMovePlates();
                 break;
         }
-    }
-
-    public List<Move> GenerateMoves()
-    {
-
     }
 
     /// <summary>
@@ -361,7 +357,7 @@ public class Chessman : MonoBehaviour
                 PlaceMovePlate(x, bonusY);
             }
 
-            //capture case
+            //capture case:
 
             int directionMod = 1;
 
@@ -569,10 +565,14 @@ public class Chessman : MonoBehaviour
     {
         MovePlate movePlate = PlaceMovePlate(x, y);
         movePlate.Type = MovePlate.PlateTypes.Castle;
-        movePlate.MoveData = new Move(this, movePlate.BoardPos, Game.ReducedBoardMatrix, false);
+        movePlate.MoveData = new Move(this, movePlate.BoardPos, Game.ReducedBoardMatrix, true);
     }
 
-    public string getName()
+    /// <summary>
+    /// Retrieve the name of the piece, as represented by its colour and type.
+    /// </summary>
+    /// <returns>The name of the piece.</returns>
+    public string GetName()
     {
         return Colour.ToString() + " " + Type.ToString();
     }
@@ -583,44 +583,51 @@ public class Chessman : MonoBehaviour
     /// <returns>The Chessman as a string.</returns>
     public override string ToString()
     {
-        string sRep = getName() + " at (" + Game.BoardXAlias[this.BoardCoords.x] + ", " + (this.BoardCoords.y + 1) + ")\n";
+        string sRep = GetName() + " at (" + Game.BoardXAlias[this.BoardCoords.x] + ", " + (this.BoardCoords.y + 1) + ")\n";
         return sRep;
     }
-}
 
-public class DummyChessman
-{
-    private Chessman.Colours colour;
-    private Chessman.Types type;
-
-    public DummyChessman(Chessman.Colours theColour, Chessman.Types theType)
+    public List<Move> GenerateMoves(DummyChessman[,] boardMatrix)
     {
-        colour = theColour;
-        type = theType;
+        List<Move> moves = new List<Move>();
+
+        switch (this.Type)
+        {
+
+            case (Types.Knight):
+                //KnightMovePlates();
+                break;
+            case (Types.Pawn):
+                if (this.Colour == Colours.Black)
+                {
+                    //PawnMovePlate(File, Rank - 1);
+                    break;
+                }
+                else
+                {
+                    //PawnMovePlate(File, Rank + 1);
+                    break;
+                }
+            case (Types.Bishop):
+                //BishopMovePlates();
+                break;
+            case (Types.Rook):
+                //RookMovePlates();
+                break;
+            case (Types.Queen):
+                //RookMovePlates();
+                //BishopMovePlates();
+                break;
+            case (Types.King):
+                //KingMovePlates();
+                break;
+        }
+        return moves;
     }
 
-    public Chessman.Colours Colour { 
-        get => colour; 
-        private set => colour = value; 
-    }
-
-    public Chessman.Types Type { 
-        get => type; 
-        private set => type = value; 
-    }
-
-    public string getName()
+    internal class AIModule
     {
-        return Colour.ToString() + " " + Type.ToString();
-    }
 
-    /// <summary>
-    /// ToString() Override for Dummy Chessmen.
-    /// </summary>
-    /// <returns>The Dummy as a string.</returns>
-    public override string ToString()
-    {
-        string sRep = getName() + "\n";
-        return sRep;
     }
+    
 }

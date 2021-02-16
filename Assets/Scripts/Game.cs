@@ -15,6 +15,7 @@ public static class Game
     //mutable game information
     private static Chessman.Colours playerTurn = Chessman.Colours.White;
     private static bool gameOver = false;
+    private static bool usingAI = false;
 
     //board information
     public static readonly int BoardXYMax = 7;
@@ -44,11 +45,12 @@ public static class Game
 
     public static GameObject[,] BoardMatrix { get => boardMatrix; private set => boardMatrix = value; }
     public static DummyChessman[,] ReducedBoardMatrix { get => reducedBoardMatrix; private set => reducedBoardMatrix = value; }
-
     public static HashSet<GameObject> WhiteArmy { get => whiteArmy; private set => whiteArmy = value; }
     public static HashSet<GameObject> BlackArmy { get => blackArmy; private set => blackArmy = value; }
+
     public static Chessman.Colours PlayerTurn { get => playerTurn; set => playerTurn = value; }
     public static bool GameOver { get => gameOver; private set => gameOver = value; }
+    public static bool UsingAI { get => usingAI; private set => usingAI = value; }
 
     /// <summary>
     /// Adds chessman to the hashsets that comprise player armies.
@@ -233,13 +235,17 @@ public static class Game
         return newChessman;
     }
 
+    /// <summary>
+    /// The move invocation method. Calling this method will affect the master board state.
+    /// </summary>
+    /// <param name="move">The Move to be played.</param>
+    /// <returns>A copy of the board state as a 2-D array of Dummy Chessmen.</returns>
     public static DummyChessman[,] Play(Move move)
     {
         Vector2Int startSquare = move.StartSquare;
         Vector2Int targetSquare = move.TargetSquare;
         GameObject movingPiece = BoardMatrix[startSquare.x, startSquare.y];
-        Chessman movingChessman = movingPiece.GetComponent<Chessman>();
-        DummyChessman[,] newBoard = null;
+        //Chessman movingChessman = movingPiece.GetComponent<Chessman>();
 
         if (move.IsCastle)
         {
@@ -247,78 +253,164 @@ public static class Game
             MovePiece(movingPiece, targetSquare);
 
             //-> move rook to correct spot
-
             //find the step direction to the empty square next to the king.
             //recall that this spot is guaranteed to exist if the king can castle
-            int stepToCastleTarget = Game.PieceAtPosition(targetSquare.x - 1, targetSquare.y) == null ? 1 : -1;
+            int stepToCastleTarget = PieceAtPosition(targetSquare.x - 1, targetSquare.y) == null ? 1 : -1;
             int stepToNewRookPos = stepToCastleTarget * -1;
 
             //find the rook to castle with. The nonempty square adjacent to the king contains the rook.
-            GameObject castleTarget = Game.PieceAtPosition(targetSquare.x + stepToCastleTarget, targetSquare.y);
+            GameObject castleTarget = PieceAtPosition(targetSquare.x + stepToCastleTarget, targetSquare.y);
 
             //move the rook to the other side of the king
             Vector2Int castleBoardPos = new Vector2Int(targetSquare.x + stepToNewRookPos, targetSquare.y);
             MovePiece(castleTarget, castleBoardPos);
 
         }
-
         else
         {
-            GameObject targetPiece = boardMatrix[targetSquare.x, targetSquare.y];
+            GameObject targetPiece = PieceAtPosition(targetSquare.x, targetSquare.y);
+            
             //if attacking a piece
             if (targetPiece != null)
             {
                 Chessman targetChessman = targetPiece.GetComponent<Chessman>();
 
-                if (targetPiece != null)
-                {
-                    UnIndexChessman(targetPiece);
-                    SetSquareEmpty(targetSquare.x, targetSquare.x);
+                UnIndexChessman(targetPiece);
+                SetSquareEmpty(targetSquare.x, targetSquare.y);
 
-                    if (targetChessman.Type == Chessman.Types.King)
-                    {
-                        Chessman.Colours winner = targetChessman.Colour == Chessman.Colours.White ? Chessman.Colours.Black : Chessman.Colours.White;
-                        WonGame(winner);
-                    }
-
-                    GameObject.Destroy(targetPiece);
-                }
-                else
+                if (targetChessman.Type == Chessman.Types.King)
                 {
-                    throw new System.ObjectDisposedException("A chessman does not exist in the backend when it should.");
+                    Chessman.Colours winner = targetChessman.Colour == Chessman.Colours.White ? Chessman.Colours.Black : Chessman.Colours.White;
+                    WonGame(winner);
                 }
 
+                UnityEngine.Object.Destroy(targetPiece);
             }
 
             //change the coordinates of the chessman in the backend
-            SetSquareEmpty(movingChessman.File, movingChessman.Rank);
-            movingChessman.SetBoardPos(targetSquare);
-            movingChessman.HasMoved = true;
-            AddPieceToMatrix(movingPiece);
+            MovePiece(movingPiece, targetSquare);
 
         }
-
-        //this is dumb, but it works.
-        //TODO: broadcast event: piece moved/piece taken, have the static class handle these
-        Game.NextTurn();
+        NextTurn();
         DestroyMovePlates();
 
-        return newBoard;
+        return (DummyChessman[,])(reducedBoardMatrix.Clone());
     }
 
+    /// <summary>
+    /// Moves the piece specified from its original position to the target square.
+    /// </summary>
+    /// <param name="movingPiece">The piece (GameObject) to be moved</param>
+    /// <param name="targetSquare">The target square of the piece</param>
     private static void MovePiece(GameObject movingPiece, Vector2Int targetSquare)
     {
-        Chessman movingChessman = movingPiece.GetComponent<Chessman>();
-        SetSquareEmpty(movingChessman.File, movingChessman.Rank);
-        movingChessman.SetBoardPos(targetSquare);
-        movingChessman.HasMoved = true;
-        AddPieceToMatrix(movingPiece);
+        if (movingPiece != null){
+            if (PositionIsValid(targetSquare.x, targetSquare.y))
+            {
+                Chessman movingChessman = movingPiece.GetComponent<Chessman>();
+                SetSquareEmpty(movingChessman.File, movingChessman.Rank);
+                movingChessman.SetBoardPos(targetSquare);
+                movingChessman.HasMoved = true;
+                AddPieceToMatrix(movingPiece);
+            } 
+            else
+            {
+                throw new IndexOutOfRangeException("Attempted to move Chessman to an index outside of the board.");
+            }
+        }
+        else
+        {
+            throw new NullReferenceException("Attempted to move a null-valued Chessman.");
+        }
     }
 
-    public static DummyChessman[,] Play(Move move, in DummyChessman[,] board)
+    /// <summary>
+    /// The theoretical move invocation method. Returns the hypothetical new board state from playing a move.
+    /// </summary>
+    /// <param name="move">The Move to apply to the board.</param>
+    /// <param name="board">The board on which the Move should be applied.</param>
+    /// <returns>A copy of the hypothetical board state.</returns>
+    public static DummyChessman[,] Play(Move move, DummyChessman[,] board)
     {
-        //TODO: implement overloaded Play method
+        /*
+        Vector2Int startSquare = move.StartSquare;
+        Vector2Int targetSquare = move.TargetSquare;
+        DummyChessman movingPiece = board[startSquare.x, startSquare.y];
+        //Chessman movingChessman = movingPiece.GetComponent<Chessman>();
+
+        if (move.IsCastle)
+        {
+            //move king to correct spot
+            board[targetSquare.x, targetSquare.y] = board[startSquare.x, startSquare.y];
+
+            //-> move rook to correct spot
+            //find the step direction to the empty square next to the king.
+            //recall that this spot is guaranteed to exist if the king can castle
+            int stepToCastleTarget = board[targetSquare.x - 1, targetSquare.y] == null ? 1 : -1;
+            int stepToNewRookPos = stepToCastleTarget * -1;
+
+            //find the rook to castle with. The nonempty square adjacent to the king contains the rook.
+            DummyChessman castleTarget = board[targetSquare.x + stepToCastleTarget, targetSquare.y];
+
+            //move the rook to the other side of the king
+            Vector2Int castleBoardPos = new Vector2Int(targetSquare.x + stepToNewRookPos, targetSquare.y);
+            MovePiece(castleTarget, castleBoardPos);
+
+        }
+        else
+        {
+            GameObject targetPiece = PieceAtPosition(targetSquare.x, targetSquare.y);
+
+            //if attacking a piece
+            if (targetPiece != null)
+            {
+                Chessman targetChessman = targetPiece.GetComponent<Chessman>();
+
+                UnIndexChessman(targetPiece);
+                SetSquareEmpty(targetSquare.x, targetSquare.y);
+
+                if (targetChessman.Type == Chessman.Types.King)
+                {
+                    Chessman.Colours winner = targetChessman.Colour == Chessman.Colours.White ? Chessman.Colours.Black : Chessman.Colours.White;
+                    WonGame(winner);
+                }
+
+                UnityEngine.Object.Destroy(targetPiece);
+            }
+
+            //change the coordinates of the chessman in the backend
+            MovePiece(movingPiece, targetSquare);
+
+        }
+        NextTurn();
+        DestroyMovePlates();
+        */
         return null;
+        
+    }
+
+    private static void MovePiece(DummyChessman movingPiece, Vector2Int targetSquare, ref DummyChessman[,] board)
+    {
+        /*
+        if (movingPiece != null)
+        {
+            if (PositionIsValid(targetSquare.x, targetSquare.y))
+            {
+                board[movingChessman.File, movingChessman.Rank
+                movingChessman.SetBoardPos(targetSquare);
+                movingChessman.HasMoved = true;
+                AddPieceToMatrix(movingPiece);
+            }
+            else
+            {
+                throw new IndexOutOfRangeException("Attempted to move Chessman to an index outside of the board.");
+            }
+        }
+        else
+        {
+            throw new NullReferenceException("Attempted to move a null-valued Chessman.");
+        }
+        */
     }
 
     /// <summary>
@@ -344,92 +436,5 @@ public static class Game
         returnText.enabled = true;
 
         gameOverText.text = victor.ToString() + " is the Winner";
-    }
-}
-
-/// <summary>
-/// The <c>Move</c> struct wraps the information behind a move into a single object.
-/// This can be used for performing game analysis and implementing chess-playing algorithms.
-/// This is an object that will be instantiated a lot. It needs to be as high-performance and
-/// memory-efficient as possible.
-/// </summary>
-public struct Move
-{
-    private DummyChessman movingChessman;
-    private DummyChessman targetingChessman;
-
-    private Vector2Int startSquare;
-    private Vector2Int targetSquare;
-    private bool isCastle;
-
-    private DummyChessman[,] boardMatrixPreImage;
-
-    //private GameObject movingPiece;
-    //private Chessman movingChessman;
-    //private GameObject targetingPiece;
-    //private Chessman targetingChessman;
-
-    public Vector2Int StartSquare { get => startSquare; private set => startSquare = value; }
-    public Vector2Int TargetSquare { get => targetSquare; private set => targetSquare = value; }
-    public DummyChessman MovingChessman { get => movingChessman; private set => movingChessman = value; }
-    public DummyChessman TargetingChessman { get => targetingChessman; private set => targetingChessman = value; }
-    public bool IsCastle { get => isCastle; private set => isCastle = value; }
-
-    //public GameObject MovingPiece { get => movingPiece; private set => movingPiece = value; }
-    //public Chessman MovingChessman { get => movingChessman; private set => movingChessman = value; }
-    //public GameObject TargetingPiece { get => targetingPiece; private set => targetingPiece = value; }
-
-
-    /// <summary>
-    /// Constructs a Move object.
-    /// </summary>
-    /// <param name="invoker">The Chessman that is moving.</param>
-    /// <param name="toSquare">The target square of the Chessman.</param>
-    /// <param name="board">A copy of the board state that consists of dummy chessmen.</param>
-    public Move(Chessman invoker, Vector2Int toSquare, DummyChessman[,] board, bool castle)
-    {
-
-        startSquare = invoker.BoardCoords;
-        targetSquare = toSquare;
-        isCastle = castle;
-
-        movingChessman = board[startSquare.x, startSquare.y];
-        targetingChessman = board[targetSquare.x, targetSquare.y];
-        //TODO: change target to the castling rook if is a castle.
-
-        //movingPiece = invoker;
-        //movingChessman = invoker.GetComponent<Chessman>();
-        //targetingPiece = board[targetSquare.x, targetSquare.y];
-        //targetingChessman = targetingPiece.GetComponent<Chessman>();
-
-        boardMatrixPreImage = board;
-    }
-
-
-    /// <summary>
-    /// Calculates the resulting board state, which is represented by a 2-D array of dummy chessmen.
-    /// </summary>
-    /// <returns>The resulting board from playing this move.</returns>
-    public DummyChessman[,] GetBoardImage()
-    {
-        //return boardMatrixPreImage;
-        throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// <c>ToString()</c> override for Moves.
-    /// </summary>
-    /// <returns>The move represented as a sentence.</returns>
-    public override string ToString()
-    {
-        string sRep = MovingChessman.getName() 
-            + " moves from " + Game.BoardXAlias[startSquare.x] + "" + startSquare.y 
-            + " to " + Game.BoardXAlias[targetSquare.x] + "" + targetSquare.y;
-
-        if(TargetingChessman != null) { sRep += ", capturing the " + TargetingChessman.getName(); }
-        else if(IsCastle) { sRep += ", castling with the " + TargetingChessman.getName(); }
-        
-        sRep += ".\n";
-        return sRep;
     }
 }

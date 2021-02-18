@@ -773,8 +773,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 12800000, guid: 420fd3fbd58c7984ba9f720dac86bd26, type: 3}
-    m_FontSize: 40
+    m_Font: {fileID: 12800000, guid: a6dede01cb8e479429b8bc5253a2ad2f, type: 3}
+    m_FontSize: 24
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 4
@@ -1029,6 +1029,75 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2083920978}
   m_CullTransparentMesh: 0
+--- !u!1001 &4018556205916762844
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4018556203915261901, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.34
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018556203915261901, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 8.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018556203915261901, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -13.361132
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018556203915261901, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018556203915261901, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018556203915261901, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018556203915261901, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018556203915261901, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018556203915261901, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018556203915261901, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018556203915261901, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018556203915261906, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_Name
+      value: Audio Switch
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 02de8c581e809f34d853f41a4b5ef9d0, type: 3}
 --- !u!1001 &7330050610551224746
 PrefabInstance:
   m_ObjectHideFlags: 0

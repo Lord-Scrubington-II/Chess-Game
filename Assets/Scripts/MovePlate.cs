@@ -31,12 +31,14 @@ public class MovePlate : MonoBehaviour
         set => moveData = value; 
     }
 
-    public PlateTypes Type { 
+    public PlateTypes Type 
+    { 
         get => type; 
         set => type = value; 
     }
 
-    public Vector2Int BoardPos { 
+    public Vector2Int BoardPos 
+    { 
         get => boardPos; 
         private set => boardPos = value; 
     }
@@ -85,7 +87,52 @@ public class MovePlate : MonoBehaviour
 
         //this is dumb, but it works.
         //TODO: broadcast event: piece moved/piece taken, have the static class handle these
-        Game.Play(this.moveData);
+        if (!Chessman.ControlsFrozen)
+        {
+            if (Chess.UsingAnims) StartCoroutine(PlayMoveWIthAnim());
+            else Chess.Play(MoveData);
+        }
+    }
+
+    /// <summary>
+    /// Function: PlayMoveWIthAnim() (Coroutine)
+    /// <para>Moves the parent of this moveplate to the correct location over time. It thereafter invokes the Game.Play(Move m) method.</para>
+    /// </summary>
+    /// <returns></returns>
+    private IEnumerator PlayMoveWIthAnim()
+    {
+        Chessman.ControlsFrozen = true;
+        Vector3 piecePos = parentPiece.transform.position;
+        Vector3 targetPos = gameObject.transform.position;
+        targetPos.z = piecePos.z; //ignore x component for Vector3.Distance() calculations
+
+        // to make knights move in a straight line
+        float xSpeedMult = Mathf.Abs(Vector3.Normalize(targetPos - piecePos).x);
+        float ySpeedMult = Mathf.Abs(Vector3.Normalize(targetPos - piecePos).y);
+
+        DisableOtherMovePlates();
+        while (Vector3.Distance(piecePos, targetPos) > float.Epsilon)
+        {
+            piecePos.x = Mathf.MoveTowards(piecePos.x, targetPos.x, Time.deltaTime * xSpeedMult * Chessman.pieceMoveSpeed);
+            piecePos.y = Mathf.MoveTowards(piecePos.y, targetPos.y, Time.deltaTime * ySpeedMult * Chessman.pieceMoveSpeed);
+
+            parentPiece.transform.position = piecePos;
+
+            yield return null;
+        }
+        Chessman.ControlsFrozen = false;
+        Chess.Play(this.moveData);
+    }
+
+
+    public void DisableOtherMovePlates()
+    {
+        GameObject[] movePlates = GameObject.FindGameObjectsWithTag("MovePlate");
+        for (int i = 0; i < movePlates.Length; i++)
+        {
+            GameObject currentEval = movePlates[i];
+            if(currentEval != gameObject) movePlates[i].SetActive(false);
+        }
     }
 
     /// <summary>
@@ -103,6 +150,9 @@ public class MovePlate : MonoBehaviour
         
     }
 
+    /// <summary>
+    /// Legacy method. Was used for playing moves before the backend was restructured.
+    /// </summary>
     private void PlayMovePlate()
     {
         //TODO: this is very architectually prohibitive. Not to mention that it obfuscates moves from the backend.
@@ -117,21 +167,21 @@ public class MovePlate : MonoBehaviour
 
             //find the step direction to the empty square next to the king.
             //recall that this spot is guaranteed to exist if the king can castle
-            int stepToCastleTarget = Game.PieceAtPosition(BoardPos.x - 1, BoardPos.y) == null ? 1 : -1;
+            int stepToCastleTarget = Chess.PieceAtPosition(BoardPos.x - 1, BoardPos.y) == null ? 1 : -1;
             int stepToNewRookPos = stepToCastleTarget * -1;
 
             //find the rook to castle with. The nonempty square adjacent to the king contains the rook.
-            GameObject castleTarget = Game.PieceAtPosition(BoardPos.x + stepToCastleTarget, BoardPos.y);
+            GameObject castleTarget = Chess.PieceAtPosition(BoardPos.x + stepToCastleTarget, BoardPos.y);
             //castleTarget = castleTarget == null ? Game.PieceAtPosition(boardPos.x + stepToCastleTarget, boardPos.y) : castleTarget;
 
             //move the rook to the other side of the king
             Vector2Int castleBoardPos = new Vector2Int(BoardPos.x + stepToNewRookPos, BoardPos.y);
             Chessman castleChessman = castleTarget.GetComponent<Chessman>();
 
-            Game.SetSquareEmpty(castleChessman.File, castleChessman.Rank);
+            Chess.SetSquareEmpty(castleChessman.File, castleChessman.Rank);
             castleChessman.SetBoardPos(castleBoardPos);
             castleChessman.HasMoved = true;
-            Game.AddPieceToMatrix(castleTarget);
+            Chess.AddPieceToMatrix(castleTarget);
 
         }
 
@@ -140,18 +190,18 @@ public class MovePlate : MonoBehaviour
 
             if (Type == PlateTypes.Attack)
             {
-                GameObject targetPiece = Game.PieceAtPosition(BoardPos.x, BoardPos.y);
+                GameObject targetPiece = Chess.PieceAtPosition(BoardPos.x, BoardPos.y);
                 Chessman targetChessman = targetPiece.GetComponent<Chessman>();
 
                 if (targetPiece != null)
                 {
-                    Game.UnIndexChessman(targetPiece);
-                    Game.SetSquareEmpty(BoardPos.x, BoardPos.y);
+                    Chess.UnIndexChessman(targetPiece);
+                    Chess.SetSquareEmpty(BoardPos.x, BoardPos.y);
 
                     if (targetChessman.Type == Chessman.Types.King)
                     {
                         Chessman.Colours winner = targetChessman.Colour == Chessman.Colours.White ? Chessman.Colours.Black : Chessman.Colours.White;
-                        Game.WonGame(winner);
+                        Chess.WonGame(winner);
                     }
 
                     Destroy(targetPiece);
@@ -169,17 +219,17 @@ public class MovePlate : MonoBehaviour
         }
 
 
-        Game.NextTurn();
-        Game.DestroyMovePlates();
+        Chess.NextTurn();
+        Chess.DestroyMovePlates();
     }
 
     private void MoveParentToMyLocation()
     {
         Chessman parentChessman = ParentPiece.GetComponent<Chessman>();
-        Game.SetSquareEmpty(parentChessman.File, parentChessman.Rank);
+        Chess.SetSquareEmpty(parentChessman.File, parentChessman.Rank);
         parentChessman.SetBoardPos(BoardPos);
         parentChessman.HasMoved = true;
-        Game.AddPieceToMatrix(ParentPiece);
+        Chess.AddPieceToMatrix(ParentPiece);
     }
 
 }

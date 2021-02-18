@@ -24,6 +24,10 @@ public class Board : MonoBehaviour
 
     private void OnMouseUp()
     {
-        Game.DestroyMovePlates();
+        if (!Chessman.ControlsFrozen)
+        {
+            Chess.DestroyMovePlates();
+        }
+
     }
 }

@@ -67,7 +67,7 @@ public class EditorUtils : MonoBehaviour
 
             //set the gameobject's transform and write the correct board coords to the chessman's backend coordinates
             gameObject.transform.position = new Vector3(snapPos.x, snapPos.y, -1.0f);
-            newBoardPos += new Vector2Int(Game.boardOffset, Game.boardOffset);
+            newBoardPos += new Vector2Int(Chess.boardOffset, Chess.boardOffset);
             chessman.BoardCoords = newBoardPos;
             
             /*

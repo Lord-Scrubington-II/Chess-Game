@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
-public static class Game
+public static class Chess
 {
     //the board state and contents of each army
     private static GameObject[,] boardMatrix = new GameObject[8, 8];
@@ -16,7 +16,11 @@ public static class Game
     //mutable game information
     private static Chessman.Colours playerTurn = Chessman.Colours.White;
     private static bool gameOver = false;
-    private static bool usingAI = false;
+
+    //static settings
+    private static bool usingAI = false; 
+    private static bool allForOne = true; //win condition: capture one king, or capture them all?
+    private static bool usingAnims = true; //will chessmen slide across the board? this should be a setting
 
     //board information
     public static readonly int BoardXYMax = 7;
@@ -29,9 +33,7 @@ public static class Game
     public static readonly bool DEBUG = true;
     public static readonly bool ignoreTurns = false;
     
-
-    
-    static Game()
+    static Chess()
     {
         /*
         PlayerWhite = new GameObject[]
@@ -52,6 +54,7 @@ public static class Game
     public static Chessman.Colours PlayerTurn { get => playerTurn; set => playerTurn = value; }
     public static bool GameOver { get => gameOver; private set => gameOver = value; }
     public static bool UsingAI { get => usingAI; private set => usingAI = value; }
+    public static bool UsingAnims { get => usingAnims; set => usingAnims = value; }
 
     /// <summary>
     /// Adds chessman to the hashsets that comprise player armies.
@@ -106,7 +109,7 @@ public static class Game
     {
         Chessman cm = newPiece.GetComponent<Chessman>();
         BoardMatrix[cm.File, cm.Rank] = newPiece;
-        ReducedBoardMatrix[cm.File, cm.Rank] = new DummyChessman(cm.Colour, cm.Type);
+        ReducedBoardMatrix[cm.File, cm.Rank] = new DummyChessman(cm.Colour, cm.Type, cm.BoardCoords);
     }
 
     /// <summary>
@@ -148,58 +151,6 @@ public static class Game
     }
 
     /// <summary>
-    /// Legacy method.
-    /// </summary>
-    internal static void RefreshBoard()
-    {
-        throw new System.NotSupportedException("This method is an unsupported legacy method.");
-
-        /*
-        //clear positions
-        boardMatrix = new GameObject[8, 8];
-
-
-        foreach (GameObject piece in whiteArmy)
-        {
-            if (piece != null)
-            {
-                //add to board matrix
-                Chessman chessman = piece.GetComponent<Chessman>();
-                if (BoardMatrix[chessman.XBoard, chessman.YBoard] != null)
-                {
-                    Console.WriteLine("Board Matrix Collision Detected.");
-                }
-                BoardMatrix[chessman.XBoard, chessman.YBoard] = piece;
-            }
-        }
-
-        foreach (GameObject piece in blackArmy)
-        {
-            if (piece != null)
-            {
-                //add to board matrix
-                Chessman chessman = piece.GetComponent<Chessman>();
-                if (BoardMatrix[chessman.XBoard, chessman.YBoard] != null)
-                {
-                    Console.WriteLine("Board Matrix Collision Detected.");
-                }
-                BoardMatrix[chessman.XBoard, chessman.YBoard] = piece;
-            }
-        }
-
-        
-        if (DEBUG)
-        {
-            foreach (GameObject g in boardMatrix)
-            {
-                SpriteRenderer s = g.GetComponent<SpriteRenderer>();
-                s.flipY = true;
-            }
-        }
-        */
-    }
-
-    /// <summary>
     /// The menus should call this function on scene load.
     /// </summary>
     internal static void ResetGame()
@@ -213,6 +164,7 @@ public static class Game
 
         playerTurn = Chessman.Colours.White;
         GameOver = false;
+        Chessman.ControlsFrozen = false;
     }
 
     /// <summary>
@@ -278,12 +230,7 @@ public static class Game
 
                 UnIndexChessman(targetPiece);
                 SetSquareEmpty(targetSquare.x, targetSquare.y);
-
-                if (targetChessman.Type == Chessman.Types.King)
-                {
-                    Chessman.Colours winner = targetChessman.Colour == Chessman.Colours.White ? Chessman.Colours.Black : Chessman.Colours.White;
-                    WonGame(winner);
-                }
+                CheckWinConditions(targetChessman);
 
                 UnityEngine.Object.Destroy(targetPiece);
             }
@@ -296,6 +243,15 @@ public static class Game
         DestroyMovePlates();
 
         return (DummyChessman[,])(reducedBoardMatrix.Clone());
+    }
+
+    private static void CheckWinConditions(Chessman justCaptured)
+    {
+        if (justCaptured.Type == Chessman.Types.King)
+        {
+            Chessman.Colours winner = justCaptured.Colour == Chessman.Colours.White ? Chessman.Colours.Black : Chessman.Colours.White;
+            WonGame(winner);
+        }
     }
 
     /// <summary>
@@ -429,6 +385,7 @@ public static class Game
     public static void WonGame(Chessman.Colours victor)
     {
         gameOver = true;
+        Chessman.ControlsFrozen = true;
         Text gameOverText;
         Text returnText;
         //very weak architecture here. should be broadcasting an event.
@@ -452,4 +409,58 @@ public static class Game
         ResetGame();
         SceneManager.LoadScene(0);
     }
+
+
+    /// <summary>
+    /// Legacy method.
+    /// </summary>
+    internal static void RefreshBoard()
+    {
+        throw new System.NotSupportedException("This method is an unsupported legacy method.");
+
+        /*
+        //clear positions
+        boardMatrix = new GameObject[8, 8];
+
+
+        foreach (GameObject piece in whiteArmy)
+        {
+            if (piece != null)
+            {
+                //add to board matrix
+                Chessman chessman = piece.GetComponent<Chessman>();
+                if (BoardMatrix[chessman.XBoard, chessman.YBoard] != null)
+                {
+                    Console.WriteLine("Board Matrix Collision Detected.");
+                }
+                BoardMatrix[chessman.XBoard, chessman.YBoard] = piece;
+            }
+        }
+
+        foreach (GameObject piece in blackArmy)
+        {
+            if (piece != null)
+            {
+                //add to board matrix
+                Chessman chessman = piece.GetComponent<Chessman>();
+                if (BoardMatrix[chessman.XBoard, chessman.YBoard] != null)
+                {
+                    Console.WriteLine("Board Matrix Collision Detected.");
+                }
+                BoardMatrix[chessman.XBoard, chessman.YBoard] = piece;
+            }
+        }
+
+        
+        if (DEBUG)
+        {
+            foreach (GameObject g in boardMatrix)
+            {
+                SpriteRenderer s = g.GetComponent<SpriteRenderer>();
+                s.flipY = true;
+            }
+        }
+        */
+    }
+
 }

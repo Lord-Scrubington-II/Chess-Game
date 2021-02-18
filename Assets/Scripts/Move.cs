@@ -78,8 +78,8 @@ public struct Move
     public override string ToString()
     {
         string sRep = MovingChessman.GetName()
-            + " moves from " + Game.BoardXAlias[startSquare.x] + "" + (startSquare.y + 1)
-            + " to " + Game.BoardXAlias[targetSquare.x] + "" + (targetSquare.y + 1);
+            + " moves from " + Chess.BoardXAlias[startSquare.x] + "" + (startSquare.y + 1)
+            + " to " + Chess.BoardXAlias[targetSquare.x] + "" + (targetSquare.y + 1);
 
         if (TargetingChessman != null) { sRep += ", capturing the " + TargetingChessman.GetName(); }
         else if (IsCastle) { sRep += ", castling with the " + TargetingChessman.GetName(); }

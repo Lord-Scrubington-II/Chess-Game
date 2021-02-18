@@ -125,7 +125,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Chess, I guess
+  m_Text: Top Text
 --- !u!1 &7956252186131143472
 GameObject:
   m_ObjectHideFlags: 0
@@ -138,7 +138,7 @@ GameObject:
   - component: {fileID: 7956252186131143485}
   - component: {fileID: 7956252186131143474}
   m_Layer: 5
-  m_Name: Text
+  m_Name: BottomText
   m_TagString: ReturnText
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -203,7 +203,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: yeah ok
+  m_Text: Bottom Text
 --- !u!1 &7956252186616393057
 GameObject:
   m_ObjectHideFlags: 0
@@ -397,22 +397,22 @@ PrefabInstance:
     - target: {fileID: 9012780290686518360, guid: 069230af6ce7afc48abda65af457cd99,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -142.5
+      value: -142.00171
       objectReference: {fileID: 0}
     - target: {fileID: 9012780290686518360, guid: 069230af6ce7afc48abda65af457cd99,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 280
+      value: 281.0024
       objectReference: {fileID: 0}
     - target: {fileID: 9012780290686518360, guid: 069230af6ce7afc48abda65af457cd99,
         type: 3}
       propertyPath: m_SizeDelta.x
-      value: -305
+      value: -303.9967
       objectReference: {fileID: 0}
     - target: {fileID: 9012780290686518360, guid: 069230af6ce7afc48abda65af457cd99,
         type: 3}
       propertyPath: m_SizeDelta.y
-      value: -580
+      value: -579.9951
       objectReference: {fileID: 0}
     - target: {fileID: 9012780290686518360, guid: 069230af6ce7afc48abda65af457cd99,
         type: 3}

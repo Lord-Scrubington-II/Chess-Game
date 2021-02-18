@@ -6,11 +6,11 @@ public class SceneLoader : MonoBehaviour
 {
     private static readonly int titleIndex = 0;
     private static readonly int menuIndex = 1;
-    private static int chessIndex;
+    //private static int chessIndex;
 
     public static int TitleIndex => titleIndex;
     public static int MenuIndex => menuIndex;
-    public static int ChessIndex { get => chessIndex; private set => chessIndex = value; }
+    //public static int ChessIndex { get => chessIndex; private set => chessIndex = value; }
 
     public void SelectLevel(string levelName)
     {
@@ -35,7 +35,7 @@ public class SceneLoader : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        ChessIndex = SceneManager.sceneCount - 1; 
+        //ChessIndex = SceneManager.sceneCount - 1; 
         //DontDestroyOnLoad(gameObject);
     }
 

@@ -12,20 +12,41 @@ EditorBuildSettings:
     path: Assets/Scenes/Level Select.unity
     guid: 07e58db70ecd27044aa2e3382acd2090
   - enabled: 1
-    path: Assets/Scenes/Level 1.unity
+    path: Assets/Scenes/Levels/Level 1.unity
     guid: 66eb8994d05d91f43b703db633392b4e
   - enabled: 1
-    path: Assets/Scenes/Level 2.unity
+    path: Assets/Scenes/Levels/Level 2.unity
     guid: 8dff97bc98a847c4d8d3fd12a2b2914d
   - enabled: 1
-    path: Assets/Scenes/Level 3.unity
+    path: Assets/Scenes/Levels/Level 3.unity
     guid: cb38205b7e4983642a7d0e232e4fe460
   - enabled: 1
-    path: Assets/Scenes/Level 4.unity
+    path: Assets/Scenes/Levels/Level 4.unity
     guid: 22b4b907d363e6840909221550f72a2f
   - enabled: 1
-    path: Assets/Scenes/Level 5.unity
+    path: Assets/Scenes/Levels/Level 5.unity
+    guid: fc51786d86602c7469b1c6958a3dc4fa
+  - enabled: 1
+    path: Assets/Scenes/Levels/Level 6.unity
+    guid: 4844e9d7b37d9e14a8f325f2977bbf7b
+  - enabled: 1
+    path: Assets/Scenes/Levels/Level 7.unity
+    guid: 16dced7884a34fd4fa66ded1aa304325
+  - enabled: 1
+    path: Assets/Scenes/Levels/Level 8.unity
+    guid: b3a5d9348db165f428ffa235c51e3315
+  - enabled: 1
+    path: Assets/Scenes/Levels/Level 9.unity
+    guid: 1f7272f68f89d8243af8b105572b7934
+  - enabled: 1
+    path: Assets/Scenes/Levels/Level 10.unity
     guid: 90a3161053e938843bcb500fcccf466f
+  - enabled: 1
+    path: Assets/Scenes/Levels/Level 11.unity
+    guid: bb3a1f0908d9e724d8d54645ed569fba
+  - enabled: 1
+    path: Assets/Scenes/Levels/Level 12.unity
+    guid: a7d230392077fe7419164a7d1903e5ca
   - enabled: 1
     path: Assets/Scenes/Pandemonium.unity
     guid: 916132cc8ea7039439cd626f770b15ab

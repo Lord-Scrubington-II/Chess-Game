@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,8 +16,10 @@ public class Chessman : MonoBehaviour, IComputableChessman
     private static readonly Vector3 DefaultScale = new Vector3(4.4f, 4.4f, 4.4f);
     public static readonly float chessmanZ = -1.0f;
     public static readonly float masterGridOffset = -3.5f;
+    public static readonly float pieceMoveSpeed = 16.0f; //this should be a setting
     private bool hasMoved = false;
     private delegate void IndexPossibleMoves(Chessman piece, GameObject[,] boardMatrix);
+    private static bool controlsFrozen = false;
 
     //declarations of sprite refs.
     [SerializeField] private Sprite blackKing, blackQueen, blackBishop, blackKnight, blackRook, blackPawn;
@@ -41,6 +44,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
 
     [SerializeField] private Colours colour;
     [SerializeField] private Types type;
+    
 
     public Vector2Int BoardCoords { get => boardPos; set => boardPos = value; }
     public int File { get => boardPos.x; set => boardPos.x = value; }
@@ -48,17 +52,33 @@ public class Chessman : MonoBehaviour, IComputableChessman
     public Colours Colour { get => colour; set => colour = value; }
     public Types Type { get => type; set => type = value; }
     public bool HasMoved { get => hasMoved; set => hasMoved = value; }
+    public static bool ControlsFrozen { get => controlsFrozen; set => controlsFrozen = value; }
 
 
     // Start is called before the first frame update
     void Start()
     {
+        readyChessman();
+    }
+
+    private void readyChessman()
+    {
         gameObject.transform.localScale = DefaultScale;
         CalibrateWorldPos();
         InitBoardPosFromWorldCoordinates();
-        Game.IndexChessman(gameObject);
-        Game.AddPieceToMatrix(gameObject);
+        Chess.IndexChessman(gameObject);
+        Chess.AddPieceToMatrix(gameObject);
         Render();
+        DisableEditorUtilsModule();
+    }
+
+    private void DisableEditorUtilsModule()
+    {
+        EditorUtils editorUtils = gameObject.GetComponent<EditorUtils>();
+        if (editorUtils != null)
+        {
+            editorUtils.enabled = false;
+        }
     }
 
     // Update is called once per frame
@@ -157,19 +177,19 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// <returns></returns>
     public bool SetBoardPos(Vector2Int coords)
     {
-        if(!Game.PositionIsValid(coords.x, coords.y)
-            || Game.PieceAtPosition(coords.x, coords.y) != null)
+        if(!Chess.PositionIsValid(coords.x, coords.y)
+            || Chess.PieceAtPosition(coords.x, coords.y) != null)
         {
             throw new IndexOutOfRangeException("Game attempted to insert chessman " + GetName() 
                 + " at board coordinates " + coords.ToString()
-                + " which contains " + Game.PieceAtPosition(coords.x, coords.y));
+                + " which contains " + Chess.PieceAtPosition(coords.x, coords.y));
             //return false;
         }
 
         boardPos.x = coords.x;
         boardPos.y = coords.y;
 
-        Game.IndexChessman(gameObject);
+        Chess.IndexChessman(gameObject);
         SetWorldCoords();
 
         return true;
@@ -180,8 +200,8 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// </summary>
     private void InitBoardPosFromWorldCoordinates()
     {
-        Vector2Int rawPos = new Vector2Int((int)(gameObject.transform.position.x + Game.boardOffset), 
-            (int)(gameObject.transform.position.y + Game.boardOffset));
+        Vector2Int rawPos = new Vector2Int((int)(gameObject.transform.position.x + Chess.boardOffset), 
+            (int)(gameObject.transform.position.y + Chess.boardOffset));
 
         BoardCoords = rawPos;
     }
@@ -201,18 +221,51 @@ public class Chessman : MonoBehaviour, IComputableChessman
 
     private void OnMouseUp()
     {
-        if(!Game.GameOver) ShowPossibleMoves();
-
+        if (!ControlsFrozen)
+        {
+            if (!Chess.GameOver) ShowPossibleMoves();
+        }
         //broadcast event: piece clicked
+    }
+
+    public IEnumerator TransformPieceTo(Vector2Int targetSquare)
+    {
+        ControlsFrozen = true;
+        Vector3 pos = gameObject.transform.position;
+        float targetX = (float)targetSquare.x + masterGridOffset;
+        float targetY = (float)targetSquare.y + masterGridOffset;
+        Vector3 target = new Vector3(targetX, targetY, pos.z);
+
+        while (Vector3.Distance(pos, target) > float.Epsilon)
+        {
+            pos.x = Mathf.MoveTowards(pos.x, Time.deltaTime * pieceMoveSpeed, float.Epsilon);
+            pos.y = Mathf.MoveTowards(pos.y, Time.deltaTime * pieceMoveSpeed, float.Epsilon);
+            yield return null;
+        }
+        ControlsFrozen = false;
+    }
+
+    public IEnumerator TransformPieceTo(Vector3 targetPos)
+    {
+        ControlsFrozen = true;
+        Vector3 pos = gameObject.transform.position;
+
+        while (Vector3.Distance(pos, targetPos) > float.Epsilon)
+        {
+            pos.x = Mathf.MoveTowards(pos.x, Time.deltaTime * pieceMoveSpeed, float.Epsilon);
+            pos.y = Mathf.MoveTowards(pos.y, Time.deltaTime * pieceMoveSpeed, float.Epsilon);
+            yield return null;
+        }
+        ControlsFrozen = false;
     }
 
     private void ShowPossibleMoves()
     {
         //when a chess piece is clicked, kill all existing moveplates
         //and spawn new ones corresponding to this chess piece
-        if (Game.PlayerTurn == this.Colour)
+        if (Chess.PlayerTurn == this.Colour)
         {
-            Game.DestroyMovePlates();
+            Chess.DestroyMovePlates();
             InitializeMovePlates();
         }
     }
@@ -314,7 +367,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
 
         //generate move plates in the specified direction until there's a piece
         //or we reach end of board
-        while(Game.PositionIsValid(x, y) && Game.PieceAtPosition(x, y) == null)
+        while(Chess.PositionIsValid(x, y) && Chess.PieceAtPosition(x, y) == null)
         {
             PlaceMovePlate(x, y);
             x += xIncr;
@@ -323,7 +376,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
 
         //at the end of the attack path, if the position is valid there must be a piece.
         //hence, if the piece is an enemy, lay down an attack square
-        if(Game.PositionIsValid(x, y) && (Game.PieceAtPosition(x, y).GetComponent<Chessman>().Colour != this.Colour))
+        if(Chess.PositionIsValid(x, y) && (Chess.PieceAtPosition(x, y).GetComponent<Chessman>().Colour != this.Colour))
         {
             PlaceAttackPlate(x, y);
         }
@@ -339,19 +392,19 @@ public class Chessman : MonoBehaviour, IComputableChessman
 
         //pawns only move forward relative to boardside,
         //so this function expects that the correct arguments are given.
-        if(Game.PositionIsValid(x, y))
+        if(Chess.PositionIsValid(x, y))
         {
             //empty forward means move
-            if(Game.PieceAtPosition(x, y) == null)
+            if(Chess.PieceAtPosition(x, y) == null)
             {
                 PlaceMovePlate(x, y);
             }
 
             //handle first move case
             int bonusY = y + startExtraMove;
-            if (Game.PositionIsValid(x, bonusY) 
-                && Game.PieceAtPosition(x, bonusY) == null 
-                && Game.PieceAtPosition(x, y) == null 
+            if (Chess.PositionIsValid(x, bonusY) 
+                && Chess.PieceAtPosition(x, bonusY) == null 
+                && Chess.PieceAtPosition(x, y) == null 
                 && !HasMoved)
             {
                 PlaceMovePlate(x, bonusY);
@@ -365,8 +418,8 @@ public class Chessman : MonoBehaviour, IComputableChessman
             for(int i = 0; i < 2; i++)
             {
                 int realX = x + directionMod;
-                if (Game.PositionIsValid(realX, y)){
-                    GameObject target = Game.PieceAtPosition(realX, y);
+                if (Chess.PositionIsValid(realX, y)){
+                    GameObject target = Chess.PieceAtPosition(realX, y);
                     //Colours targetColour = target.GetComponent<Chessman>().Colour;
                     
                     //if the spot is valid, has a piece, and contains an enemy, place attack plate
@@ -408,6 +461,9 @@ public class Chessman : MonoBehaviour, IComputableChessman
         KingCastleMovePlates();
     }
 
+    /// <summary>
+    /// The moveplate instantiation function for king's castle.
+    /// </summary>
     private void KingCastleMovePlates()
     {
         
@@ -427,18 +483,21 @@ public class Chessman : MonoBehaviour, IComputableChessman
                 y = kingsRank;
 
                 //search for another piece.
-                while (Game.PositionIsValid(x, y) && Game.PieceAtPosition(x, y) == null)
+                while (Chess.PositionIsValid(x, y) && Chess.PieceAtPosition(x, y) == null)
                 {
                     x += step;
                 }
 
-                //if the piece exists... 
-                if (Game.PositionIsValid(x, y) && Game.BoardMatrix[x, y] != null)
+                //if the piece exists, has an empty spot to move to... 
+                if (Chess.PositionIsValid(x, y) 
+                    && Chess.BoardMatrix[x, y] != null
+                    && Chess.PositionIsValid(x - step, y)
+                    && Chess.BoardMatrix[x - step, y] == null)
                 {
                     //and is a rook of the same colour that has also not moved...
-                    if (Game.BoardMatrix[x, y].GetComponent<Chessman>().Type == Types.Rook 
-                        && Game.BoardMatrix[x, y].GetComponent<Chessman>().Colour == Colour
-                        && !Game.BoardMatrix[x, y].GetComponent<Chessman>().HasMoved)
+                    if (Chess.BoardMatrix[x, y].GetComponent<Chessman>().Type == Types.Rook 
+                        && Chess.BoardMatrix[x, y].GetComponent<Chessman>().Colour == Colour
+                        && !Chess.BoardMatrix[x, y].GetComponent<Chessman>().HasMoved)
                     {
                         //then permit the king to castle.
                         PlaceCastlePlate(x - step, y);
@@ -488,9 +547,9 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// <param name="y">The board y coord.</param>
     public void PointMovePlate(int x, int y)
     {
-        if (Game.PositionIsValid(x, y))
+        if (Chess.PositionIsValid(x, y))
         {
-            GameObject pieceInSquare = Game.PieceAtPosition(x, y);
+            GameObject pieceInSquare = Chess.PieceAtPosition(x, y);
 
             if (pieceInSquare == null)
             {
@@ -533,14 +592,15 @@ public class Chessman : MonoBehaviour, IComputableChessman
 
         //instantiation of move plate, childed to this piece
         GameObject nMovePlate = Instantiate(movePlatePrefab, plateWorldPos, Quaternion.identity);
-        nMovePlate.transform.parent = gameObject.transform;
+        //nMovePlate.transform.parent = gameObject.transform;
 
         //set the board coordinates of the actual moveplate
         MovePlate movePlate = nMovePlate.GetComponent<MovePlate>();
         movePlate.ParentPiece = gameObject;
         movePlate.SetCoords(platePos);
 
-        movePlate.MoveData = new Move(this, platePos, Game.ReducedBoardMatrix, false);
+        //attach a Move object to the new move plate
+        movePlate.MoveData = new Move(this, platePos, Chess.ReducedBoardMatrix, false);
 
         return movePlate;
     }
@@ -565,7 +625,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     {
         MovePlate movePlate = PlaceMovePlate(x, y);
         movePlate.Type = MovePlate.PlateTypes.Castle;
-        movePlate.MoveData = new Move(this, movePlate.BoardPos, Game.ReducedBoardMatrix, true);
+        movePlate.MoveData = new Move(this, movePlate.BoardPos, Chess.ReducedBoardMatrix, true);
     }
 
     /// <summary>
@@ -583,7 +643,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// <returns>The Chessman as a string.</returns>
     public override string ToString()
     {
-        string sRep = GetName() + " at (" + Game.BoardXAlias[this.BoardCoords.x] + ", " + (this.BoardCoords.y + 1) + ")\n";
+        string sRep = $"{GetName()} at {Chess.BoardXAlias[this.BoardCoords.x]}{this.BoardCoords.y + 1}\n";
         return sRep;
     }
 

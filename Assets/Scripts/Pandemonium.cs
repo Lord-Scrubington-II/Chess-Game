@@ -42,7 +42,7 @@ public class Pandemonium : MonoBehaviour
         newChessman.Colour = cmColour;
         newChessman.SetBoardPos(newCoords);
         Chess.AddPieceToMatrix(newPiece);
-        newChessman.Render();
+        newChessman.ActivateSprite();
     }
 
     // Update is called once per frame

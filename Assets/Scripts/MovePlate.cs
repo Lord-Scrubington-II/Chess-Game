@@ -104,7 +104,7 @@ public class MovePlate : MonoBehaviour
         Chessman.ControlsFrozen = true;
         Vector3 piecePos = parentPiece.transform.position;
         Vector3 targetPos = gameObject.transform.position;
-        targetPos.z = piecePos.z; //ignore x component for Vector3.Distance() calculations
+        targetPos.z = piecePos.z; //ignore z component for Vector3.Distance() calculations
 
         // to make knights move in a straight line
         float xSpeedMult = Mathf.Abs(Vector3.Normalize(targetPos - piecePos).x);

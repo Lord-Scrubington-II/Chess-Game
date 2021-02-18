@@ -68,7 +68,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
         InitBoardPosFromWorldCoordinates();
         Chess.IndexChessman(gameObject);
         Chess.AddPieceToMatrix(gameObject);
-        Render();
+        ActivateSprite();
         DisableEditorUtilsModule();
     }
 
@@ -90,7 +90,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// <summary>
     /// Visually activates the chessman.
     /// </summary>
-    public void Render()
+    public void ActivateSprite()
     {
         SetWorldCoords();
         SelectSprite();

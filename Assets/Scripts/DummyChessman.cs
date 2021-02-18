@@ -64,6 +64,9 @@ public class DummyChessman : IComputableChessman
 ///     A Type
 ///     </item>
 ///     <item>
+///     A Position
+///     </item>
+///     <item>
 ///     A Name
 ///     </item>
 ///     <item>
@@ -75,7 +78,7 @@ public interface IComputableChessman
 {
     Chessman.Colours Colour { get; }
     Chessman.Types Type { get; }
-    //public Vector2Int BoardCoords { get; }
+    Vector2Int BoardCoords { get; }
 
     List<Move> GenerateMoves(DummyChessman[,] boardMatrix);
     string GetName();

@@ -23,7 +23,7 @@ public class Pandemonium : MonoBehaviour
                 rand = Random.value;
                 if(rand >= PieceProbability)
                 {
-                    cmType = (Chessman.Types)Random.Range(0, 8);
+                    cmType = (Chessman.Types)Random.Range(0, 6);
                     cmColour = (Chessman.Colours)Random.Range(0, 2);
                     newCoords = new Vector2Int(file, rank);
                     CreateChessman(cmType, cmColour, newCoords);

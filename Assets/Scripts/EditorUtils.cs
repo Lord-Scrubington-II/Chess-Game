@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -42,27 +41,8 @@ public class EditorUtils : MonoBehaviour
             //snap to grid, update sprite and name
             SnapToGrid(chessman);
             chessman.SelectSprite();
-            ChangeName();
-            HandleDuplicateChessmen(); //let's see if this works.
+            chessman.name = chessman.ToString();
         }
-    }
-
-    private void HandleDuplicateChessmen()
-    {
-        Chessman[] allChessman = GameObject.FindObjectsOfType<Chessman>();
-        for (int i = 0; i < allChessman.Length; i++)
-        {
-            Chessman current_eval = allChessman[i];
-            if (current_eval.name == chessman.name && current_eval != chessman)
-            {
-                //DestroyImmediate(current_eval.gameObject);
-            }
-        }
-    }
-
-    private void ChangeName()
-    {
-        chessman.name = chessman.ToString();
     }
 
     /// <summary>

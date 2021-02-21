@@ -110,7 +110,7 @@ public class MovePlate : MonoBehaviour
         float xSpeedMult = Mathf.Abs(Vector3.Normalize(targetPos - piecePos).x);
         float ySpeedMult = Mathf.Abs(Vector3.Normalize(targetPos - piecePos).y);
 
-        DisableOtherMovePlates();
+        GameObject[] sceneMovePlates = DisableOtherMovePlates();
         while (Vector3.Distance(piecePos, targetPos) > float.Epsilon)
         {
             piecePos.x = Mathf.MoveTowards(piecePos.x, targetPos.x, Time.deltaTime * xSpeedMult * Chessman.pieceMoveSpeed);
@@ -121,17 +121,36 @@ public class MovePlate : MonoBehaviour
             yield return null;
         }
         Chessman.ControlsFrozen = false;
+        EnableAllObjects(sceneMovePlates);
         Chess.Play(this.moveData);
     }
 
-
-    public void DisableOtherMovePlates()
+    /// <summary>
+    /// Disable the moveplates in the scene.
+    /// </summary>
+    /// <returns>The moveplates disabled.</returns>
+    public GameObject[] DisableOtherMovePlates()
     {
         GameObject[] movePlates = GameObject.FindGameObjectsWithTag("MovePlate");
         for (int i = 0; i < movePlates.Length; i++)
         {
             GameObject currentEval = movePlates[i];
             if(currentEval != gameObject) movePlates[i].SetActive(false);
+        }
+
+        return movePlates;
+    }
+
+    /// <summary>
+    /// Re-enable GameObjects to allow for "garbage collection". This particular method is for moveplates.
+    /// </summary>
+    /// <param name="movePlates">The array of game objects to enable.</param>
+    public void EnableAllObjects(GameObject[] movePlates)
+    {
+        for (int i = 0; i < movePlates.Length; i++)
+        {
+            GameObject currentEval = movePlates[i];
+            if (currentEval != gameObject) movePlates[i].SetActive(true);
         }
     }
 

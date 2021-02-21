@@ -42,6 +42,24 @@ public class EditorUtils : MonoBehaviour
             SnapToGrid(chessman);
             chessman.SelectSprite();
             chessman.name = chessman.ToString();
+            HandleDuplicateChessmen(); //let's see if this works.
+        }
+    }
+
+    /// <summary>
+    /// For preventing duplicate chessmen from causing problems in play mode. Clobbers chessmen in the square that the currently selected one moves to.
+    /// It would be way smarter to prevent new pieces from entering the squares of existing pieces, but this will do for now.
+    /// </summary>
+    private void HandleDuplicateChessmen()
+    {
+        Chessman[] allChessman = GameObject.FindObjectsOfType<Chessman>();
+        for (int i = 0; i < allChessman.Length; i++)
+        {
+            Chessman current_eval = allChessman[i];
+            if ((current_eval != chessman) && (current_eval.name == chessman.name))
+            {
+                DestroyImmediate(current_eval.gameObject);
+            }
         }
     }
 

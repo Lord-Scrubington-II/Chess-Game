@@ -15,7 +15,7 @@ Chess is an ancient game, so it entered the public domain many ages ago.
 
 This project began its existence, in a manner of speaking, as the foundation for a game development project at my university. I must thank my former supervisor for letting me keep the code I had originally written.
 
-To help get this project off the ground, I consulted myriad online resources - in particular, StackOverflow. Very helpful was also the beginning of a video series by Youtube user Etredal, which may be viewed here: https://www.youtube.com/watch?v=lFZeeTZ29w0&list=PLXV-vjyZiT4b7WGjgiqMy422AVyMaigl1&index=2. 
+To help get this project off the ground, I consulted myriad online resources - in particular, the Unity API documentation, Microsoft's C# .NET Docs, and StackOverflow (who doesn't?). Very helpful was also the beginning of a video series by Youtube user Etredal, which may be viewed here: https://www.youtube.com/watch?v=lFZeeTZ29w0&list=PLXV-vjyZiT4b7WGjgiqMy422AVyMaigl1&index=2. 
 However, I have completely (and I mean completely) overhauled the architecture of the game in preparation for the implementation of future features, as well as for long-term maintainability - and also as a general exercise in foundational software development practices.
 
 All art assets are from either the Unity Asset Store or from this page on Itch.io: https://devilsworkshop.itch.io/pixel-art-chess-asset-pack.

@@ -10,7 +10,7 @@ Would it be more appropriate to call it bad chess? Perhaps, and perhaps not. If 
 
 Future planned features include an AI player, a settings menu, additional *bad chess* levels, a **very special** level, and more.
 
-## Special Thanks
+## Attributions
 Chess is an ancient game, so it entered the public domain many ages ago.
 
 This project began its existence, in a manner of speaking, as the foundation for a game development project at my university. I must thank my former supervisor for letting me keep the code I had originally written.

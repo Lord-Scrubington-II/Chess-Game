@@ -3,8 +3,8 @@ using UnityEngine;
 /// <summary>
 /// The <c>Move</c> struct wraps the information behind a move into a single object.
 /// This can be used for performing game analysis and implementing chess-playing algorithms.
-/// This is an object that will be instantiated a lot. It needs to be as high-performance and
-/// memory-efficient as possible.
+/// Since this is an object that will be instantiated a lot, 
+/// it needs to be as high-performance and memory-efficient as possible.
 /// </summary>
 public struct Move
 {

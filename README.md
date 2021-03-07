@@ -1,5 +1,5 @@
 # Chess-Game
-An unassuming chess game.
+An unassuming chess game. (WIP)
 
 ## Features
 This is a chess app built in Unity Game Engine, designed for Android and PC builds. However, it is not your average chess game. 
@@ -10,7 +10,10 @@ Would it be more appropriate to call it bad chess? Perhaps, and perhaps not. If 
 
 Future planned features include an AI player, a settings menu, additional *bad chess* levels, a **very special** level, and more.
 
-## Special Thanks
+![LevelSample1](https://github.com/Lord-Scrubington-II/Chess-Game/blob/main/LevelSample2.png)
+![LevelSample3](https://github.com/Lord-Scrubington-II/Chess-Game/blob/main/LevelSample3.png)
+
+## Attributions
 Chess is an ancient game, so it entered the public domain many ages ago.
 
 This project began its existence, in a manner of speaking, as the foundation for a game development project at my university. I must thank my former supervisor for letting me keep the code I had originally written.

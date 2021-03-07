@@ -1170,6 +1170,16 @@ PrefabInstance:
       propertyPath: m_Name
       value: Audio Switch
       objectReference: {fileID: 0}
+    - target: {fileID: 4018556203915261907, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_audioClip
+      value: 
+      objectReference: {fileID: 8300000, guid: ba40b665b10ba274c9fa74829f98ef1b, type: 3}
+    - target: {fileID: 4018556203915261907, guid: 02de8c581e809f34d853f41a4b5ef9d0,
+        type: 3}
+      propertyPath: m_PlayOnAwake
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 02de8c581e809f34d853f41a4b5ef9d0, type: 3}
 --- !u!1001 &7330050610551224746

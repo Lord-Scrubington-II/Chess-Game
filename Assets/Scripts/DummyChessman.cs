@@ -84,9 +84,9 @@ public interface IComputableChessman
     Chessman.Colours Colour { get; }
     Chessman.Types Type { get; }
     Vector2Int BoardCoords { get; }
-    public int File { get; }
-    public int Rank { get; }
-    public bool HasMoved { get; }
+    int File { get; }
+    int Rank { get; }
+    bool HasMoved { get; }
 
     List<Move> GenerateMoves(DummyChessman[,] boardMatrix);
     string GetName();

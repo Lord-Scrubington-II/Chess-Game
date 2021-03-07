@@ -14,12 +14,12 @@ public static class Chess
     private static HashSet<GameObject> blackArmy = new HashSet<GameObject>();
 
     //mutable game information
-    private static Chessman.Colours playerTurn = Chessman.Colours.White;
+    private static Chessman.Colours toMove = Chessman.Colours.White;
     private static bool gameOver = false;
 
     //static settings
     private static bool usingAI = false; 
-    private static bool allForOne = true; //win condition: capture one king (true), or capture them all (false)?
+    private static bool allForOne = false; //win condition: capture one king (true), or capture them all (false)?
     private static bool usingAnims = true; //will chessmen slide across the board? this should be a setting
 
     //board information
@@ -45,7 +45,7 @@ public static class Chess
         };
         */
         //RefreshBoard();
-        playerTurn = Chessman.Colours.White;
+        toMove = Chessman.Colours.White;
         GameOver = false;
     }
 
@@ -54,7 +54,7 @@ public static class Chess
     public static HashSet<GameObject> WhiteArmy { get => whiteArmy; private set => whiteArmy = value; }
     public static HashSet<GameObject> BlackArmy { get => blackArmy; private set => blackArmy = value; }
 
-    public static Chessman.Colours PlayerTurn { get => playerTurn; set => playerTurn = value; }
+    public static Chessman.Colours PlayerToMove { get => toMove; set => toMove = value; }
     public static bool GameOver { get => gameOver; private set => gameOver = value; }
     public static bool UsingAI { get => usingAI; private set => usingAI = value; }
     public static bool UsingAnims { get => usingAnims; set => usingAnims = value; }
@@ -64,7 +64,7 @@ public static class Chess
     /// </summary>
     internal static void NextTurn()
     {
-        PlayerTurn = PlayerTurn == Chessman.Colours.Black ? Chessman.Colours.White : Chessman.Colours.Black;
+        PlayerToMove = PlayerToMove == Chessman.Colours.Black ? Chessman.Colours.White : Chessman.Colours.Black;
     }
 
     /// <summary>
@@ -168,7 +168,7 @@ public static class Chess
         WhiteArmy = new HashSet<GameObject>();
         BlackArmy = new HashSet<GameObject>();
 
-        playerTurn = Chessman.Colours.White;
+        toMove = Chessman.Colours.White;
         GameOver = false;
         Chessman.ControlsFrozen = false;
     }
@@ -204,7 +204,13 @@ public static class Chess
         Vector2Int startSquare = move.StartSquare;
         Vector2Int targetSquare = move.TargetSquare;
         GameObject movingPiece = BoardMatrix[startSquare.x, startSquare.y];
-        //Chessman movingChessman = movingPiece.GetComponent<Chessman>();
+
+        if(movingPiece == null)
+        {
+            throw new ObjectDisposedException("A chess piece was somehow null-valued at an attempted move origin square.");
+        }
+
+        Chessman movingChessman = movingPiece.GetComponent<Chessman>();
 
         if (move.IsCastle)
         {
@@ -244,6 +250,16 @@ public static class Chess
             //change the coordinates of the chessman in the backend
             MovePiece(movingPiece, targetSquare);
 
+
+            //pawn promotion
+            if (movingChessman.HasMoved
+                && movingChessman.Type == Chessman.Types.Pawn
+                && (movingChessman.Rank == BoardXYMax || movingChessman.Rank == BoardXYMin))
+            {
+                movingChessman.Type = Chessman.Types.Queen;
+                movingChessman.SelectSprite();
+            }
+
         }
         NextTurn();
         DestroyMovePlates();
@@ -275,7 +291,7 @@ public static class Chess
             bool hasAKing = false;
 
             //check the number of kings in the opponent's hash set
-            if(playerTurn == Chessman.Colours.Black)
+            if(toMove == Chessman.Colours.Black)
             {
                 foreach(var piece in WhiteArmy)
                 {
@@ -294,7 +310,7 @@ public static class Chess
 
             if (!hasAKing)
             {
-                WonGame(playerTurn);
+                WonGame(toMove);
             }
         }
     }
@@ -422,6 +438,41 @@ public static class Chess
         {
             GameObject.Destroy(movePlates[i]);
         }
+    }
+
+    /// <summary>
+    /// Calculates a masterlist of all the possible moves for the current board state.
+    /// </summary>
+    /// <param name="toMove">Player to move.</param>
+    /// <returns>All current possible moves.</returns>
+    public static List<Move> GenerateAllMoves(Chessman.Colours toMove)
+    {
+        List<Move> allMoves = new List<Move>();
+
+        foreach(DummyChessman chessman in ReducedBoardMatrix)
+        {
+            if(chessman.Colour == toMove) allMoves.AddRange(chessman.GenerateMoves(ReducedBoardMatrix));
+        }
+
+        return allMoves;
+    }
+
+    /// <summary>
+    /// Calculates a masterlist of all the possible moves for a given board state.
+    /// </summary>
+    /// <param name="board">The board state, expressed as a 2-D Matrix of Dummy Chessmen.</param>
+    /// <param name="toMove">Player to move.</param>
+    /// <returns>All possible moves on the given board.</returns>
+    public static List<Move> GenerateAllMoves(DummyChessman[,] board, Chessman.Colours toMove)
+    {
+        List<Move> allMoves = new List<Move>();
+
+        foreach (DummyChessman chessman in board)
+        {
+            if (chessman.Colour == toMove) allMoves.AddRange(chessman.GenerateMoves(board));
+        }
+
+        return allMoves;
     }
 
     public static void WonGame(Chessman.Colours victor)

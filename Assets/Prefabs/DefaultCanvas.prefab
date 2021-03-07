@@ -82,8 +82,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.49998474, y: 214.49756}
-  m_SizeDelta: {x: -71, y: -527.0049}
+  m_AnchoredPosition: {x: 0.5, y: 169.18}
+  m_SizeDelta: {x: -71, y: -436.35464}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7956252185968610517
 CanvasRenderer:
@@ -125,7 +125,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Top Text
+  m_Text: Welcome to Actual Chess.
 --- !u!1 &7956252186131143472
 GameObject:
   m_ObjectHideFlags: 0
@@ -138,7 +138,7 @@ GameObject:
   - component: {fileID: 7956252186131143485}
   - component: {fileID: 7956252186131143474}
   m_Layer: 5
-  m_Name: BottomText
+  m_Name: Return to Menu
   m_TagString: ReturnText
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -160,8 +160,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.5141907, y: -235.40198}
-  m_SizeDelta: {x: -72.82846, y: -588.25464}
+  m_AnchoredPosition: {x: 0.5141907, y: -184.88}
+  m_SizeDelta: {x: -72.82846, y: -460.8036}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7956252186131143485
 CanvasRenderer:
@@ -192,10 +192,10 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 420fd3fbd58c7984ba9f720dac86bd26, type: 3}
-    m_FontSize: 24
+    m_FontSize: 17
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 2
+    m_MinSize: 0
     m_MaxSize: 40
     m_Alignment: 4
     m_AlignByGeometry: 0
@@ -203,7 +203,8 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Bottom Text
+  m_Text: In the future, this will not be so easy to find. But for now, please take
+    your time and enjoy yourself. (*^_^*)/
 --- !u!1 &7956252186616393057
 GameObject:
   m_ObjectHideFlags: 0
@@ -256,8 +257,7 @@ Canvas:
   m_Enabled: 1
   serializedVersion: 3
   m_RenderMode: 1
-  m_Camera: {fileID: 7330050610718294485, guid: df368a3da5948ec4bbe798b5ae4a0e3d,
-    type: 3}
+  m_Camera: {fileID: 0}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
   m_ReceivesEvents: 1
@@ -283,7 +283,7 @@ MonoBehaviour:
   m_UiScaleMode: 0
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 720, y: 1080}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
@@ -397,22 +397,22 @@ PrefabInstance:
     - target: {fileID: 9012780290686518360, guid: 069230af6ce7afc48abda65af457cd99,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -142.00171
+      value: -117.70999
       objectReference: {fileID: 0}
     - target: {fileID: 9012780290686518360, guid: 069230af6ce7afc48abda65af457cd99,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 281.0024
+      value: 234.5
       objectReference: {fileID: 0}
     - target: {fileID: 9012780290686518360, guid: 069230af6ce7afc48abda65af457cd99,
         type: 3}
       propertyPath: m_SizeDelta.x
-      value: -303.9967
+      value: -255.40808
       objectReference: {fileID: 0}
     - target: {fileID: 9012780290686518360, guid: 069230af6ce7afc48abda65af457cd99,
         type: 3}
       propertyPath: m_SizeDelta.y
-      value: -579.9951
+      value: -486.99518
       objectReference: {fileID: 0}
     - target: {fileID: 9012780290686518360, guid: 069230af6ce7afc48abda65af457cd99,
         type: 3}

@@ -263,7 +263,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     {
         //when a chess piece is clicked, kill all existing moveplates
         //and spawn new ones corresponding to this chess piece
-        if (Chess.PlayerTurn == this.Colour)
+        if (Chess.PlayerToMove == this.Colour)
         {
             Chess.DestroyMovePlates();
             InitializeMovePlates();
@@ -297,12 +297,12 @@ public class Chessman : MonoBehaviour, IComputableChessman
             case (Types.Pawn):
                 if(this.Colour == Colours.Black)
                 {
-                    PawnMovePlate(File, Rank - 1);
+                    PawnMovePlates(File, Rank - 1);
                     break;
                 }
                 else
                 {
-                    PawnMovePlate(File, Rank + 1);
+                    PawnMovePlates(File, Rank + 1);
                     break;
                 }
             case (Types.Bishop):
@@ -385,7 +385,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// <summary>
     /// The moveplate pattern instantiation function for pawns.
     /// </summary>
-    private void PawnMovePlate(int x, int y)
+    private void PawnMovePlates(int x, int y)
     {
         //for handling first move case.
         int startExtraMove = Colour == Colours.Black ? -1 : 1;
@@ -400,7 +400,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
                 PlaceMovePlate(x, y);
             }
 
-            //handle first move case
+            //handle double push case
             int bonusY = y + startExtraMove;
             if (Chess.PositionIsValid(x, bonusY) 
                 && Chess.PieceAtPosition(x, bonusY) == null 
@@ -647,42 +647,247 @@ public class Chessman : MonoBehaviour, IComputableChessman
         return sRep;
     }
 
+    /// <summary>
+    /// This method generates a list of this piece's currently available moves.
+    /// </summary>
+    /// <param name="boardMatrix">A dummy copy of the board matrix.</param>
+    /// <returns>A list of my available moves.</returns>
     public List<Move> GenerateMoves(DummyChessman[,] boardMatrix)
     {
         List<Move> moves = new List<Move>();
 
         switch (this.Type)
         {
-
             case (Types.Knight):
-                //KnightMovePlates();
+                moves = KnightMoves();
                 break;
             case (Types.Pawn):
                 if (this.Colour == Colours.Black)
                 {
-                    //PawnMovePlate(File, Rank - 1);
+                    moves = PawnMoves(File, Rank - 1);
                     break;
                 }
                 else
                 {
-                    //PawnMovePlate(File, Rank + 1);
+                    moves = PawnMoves(File, Rank + 1);
                     break;
                 }
             case (Types.Bishop):
-                //BishopMovePlates();
+                moves = BishopMoves();
                 break;
             case (Types.Rook):
-                //RookMovePlates();
+                moves = RookMoves();
                 break;
             case (Types.Queen):
-                //RookMovePlates();
-                //BishopMovePlates();
+                moves.AddRange(RookMoves());
+                moves.AddRange(BishopMoves());
                 break;
             case (Types.King):
-                //KingMovePlates();
+                moves = KingMoves();
                 break;
         }
         return moves;
+    }
+
+    private List<Move> KingMoves()
+    {
+        int targetX;
+        int targetY;
+        List<Move> myMoves = new List<Move>();
+
+        //for all squares around the king...
+        for (int i = -1; i <= 1; i++)
+        {
+            for (int j = -1; j <= 1; j++)
+            {
+                //except for the king himself...
+                if (i != 0 || j != 0)
+                {
+                    //generate the corresponding move.
+                    targetX = File + i;
+                    targetY = Rank + j;
+                    myMoves.Add(new Move(this, new Vector2Int(targetX, targetY), Chess.ReducedBoardMatrix, false));
+                }
+            }
+        }
+
+        KingsCastleMoves(ref myMoves);
+
+        return myMoves;
+    }
+
+    private void KingsCastleMoves(ref List<Move> myMoves)
+    {
+        int kingsFile = this.File;
+        int kingsRank = this.Rank;
+        int x;
+        int y;
+
+        //if the king has not moved...
+        if (!this.hasMoved)
+        {
+            //for each of the two directions along the king's rank...
+            int step = 1;
+            for (int i = 0; i < 2; i++)
+            {
+                x = kingsFile + step;
+                y = kingsRank;
+
+                //search for another piece.
+                while (Chess.PositionIsValid(x, y) && Chess.PieceAtPosition(x, y) == null)
+                {
+                    x += step;
+                }
+
+                //if the piece exists, has an empty spot to move to... 
+                if (Chess.PositionIsValid(x, y)
+                    && Chess.BoardMatrix[x, y] != null
+                    && Chess.PositionIsValid(x - step, y)
+                    && Chess.BoardMatrix[x - step, y] == null)
+                {
+                    //and is a rook of the same colour that has also not moved...
+                    if (Chess.BoardMatrix[x, y].GetComponent<Chessman>().Type == Types.Rook
+                        && Chess.BoardMatrix[x, y].GetComponent<Chessman>().Colour == Colour
+                        && !Chess.BoardMatrix[x, y].GetComponent<Chessman>().HasMoved)
+                    {
+                        //then permit the king to castle.
+                        myMoves.Add(new Move(this, new Vector2Int(x, y), Chess.ReducedBoardMatrix, false));
+                    }
+                }
+                step *= -1;
+            }
+        }
+    }
+
+    private List<Move> RookMoves()
+    {
+        List<Move> myMoves = new List<Move>();
+
+        myMoves.AddRange(LineMoves(0, 1));
+        myMoves.AddRange(LineMoves(0, -1));
+        myMoves.AddRange(LineMoves(1, 0));
+        myMoves.AddRange(LineMoves(-1, 0));
+
+        return myMoves;
+    }
+
+    private List<Move> BishopMoves()
+    {
+        List<Move> myMoves = new List<Move>();
+
+        myMoves.AddRange(LineMoves(1, 1));
+        myMoves.AddRange(LineMoves(1, -1));
+        myMoves.AddRange(LineMoves(-1, 1));
+        myMoves.AddRange(LineMoves(-1, -1));
+
+        return myMoves;
+    }
+
+    private List<Move> LineMoves(int xIncr, int yIncr)
+    {
+        //start a square away
+        int x = File + xIncr;
+        int y = Rank + yIncr;
+        List<Move> myMoves = new List<Move>();
+
+        //generate moves in the specified direction until there's a piece
+        //or we reach end of board
+        while (Chess.PositionIsValid(x, y) && Chess.PieceAtPosition(x, y) == null)
+        {
+            myMoves.Add(new Move(this, new Vector2Int(x, y), Chess.ReducedBoardMatrix, false));
+            x += xIncr;
+            y += yIncr;
+        }
+
+        //at the end of the attack path, if the position is valid there must be a piece.
+        if (Chess.PositionIsValid(x, y) && (Chess.PieceAtPosition(x, y).GetComponent<Chessman>().Colour != this.Colour))
+        {
+            myMoves.Add(new Move(this, new Vector2Int(x, y), Chess.ReducedBoardMatrix, false));
+        }
+
+        return myMoves;
+    }
+
+    private List<Move> PawnMoves(int x, int y)
+    {
+        //for handling first move case.
+        int startExtraMove = Colour == Colours.Black ? -1 : 1;
+        List<Move> myMoves = new List<Move>();
+
+        //pawns only move forward relative to boardside,
+        //so this function expects that the correct arguments are given.
+        if (Chess.PositionIsValid(x, y))
+        {
+            //empty forward means move
+            if (Chess.PieceAtPosition(x, y) == null)
+            {
+                myMoves.Add(new Move(this, new Vector2Int(x, y), Chess.ReducedBoardMatrix, false));
+            }
+
+            //handle double push case
+            int bonusY = y + startExtraMove;
+            if (Chess.PositionIsValid(x, bonusY)
+                && Chess.PieceAtPosition(x, bonusY) == null
+                && Chess.PieceAtPosition(x, y) == null
+                && !HasMoved)
+            {
+                myMoves.Add(new Move(this, new Vector2Int(x, y), Chess.ReducedBoardMatrix, false));
+            }
+
+            //capture case:
+
+            int directionMod = 1;
+
+            //check forward squares twice; once for right and once for left
+            for (int i = 0; i < 2; i++)
+            {
+                int realX = x + directionMod;
+                if (Chess.PositionIsValid(realX, y))
+                {
+                    GameObject target = Chess.PieceAtPosition(realX, y);
+
+                    //if the spot is valid, has a piece, and contains an enemy, place attack plate
+                    if ((target != null) && (target.GetComponent<Chessman>().Colour != Colour))
+                    {
+                        myMoves.Add(new Move(this, new Vector2Int(x, y), Chess.ReducedBoardMatrix, false));
+                    }
+                }
+                //switch to left
+                directionMod = directionMod * -1;
+            }
+        }
+
+        return myMoves;
+    }
+
+    private List<Move> KnightMoves()
+    {
+        int xOffset = 2;
+        int yOffset = 1;
+        int targetX;
+        int targetY;
+        List<Move> myMoves = new List<Move>();
+
+        //I stand by my assertion that this is better than copy pasting the method call 8 times.
+
+        for (int i = 0; i < 2; i++) //for all of the correct squares
+        {
+            for (int j = 0; j < 2; j++) //forming an L-profile
+            {
+                for (int k = 0; k < 2; k++) //around the knight...
+                {
+                    //generate the corresponding move.
+                    targetX = File + xOffset;
+                    targetY = Rank + yOffset;
+                    myMoves.Add(new Move(this, new Vector2Int(targetX, targetY), Chess.ReducedBoardMatrix, false));
+                    yOffset *= -1;
+                }
+                xOffset *= -1;
+            }
+            BitSwapInts(ref xOffset, ref yOffset);
+        }
+
+        return myMoves;
     }
 
     internal class AIModule

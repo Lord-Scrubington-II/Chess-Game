@@ -9,18 +9,13 @@ public class DummyChessman : IComputableChessman
 {
     private Chessman.Colours colour;
     private Chessman.Types type;
-    private Vector2Int boardPos;
-    private bool hasMoved;
-    public int File { get => boardPos.x; set => boardPos.x = value; }
-    public int Rank { get => boardPos.y; set => boardPos.y = value; }
-    public bool HasMoved { get => hasMoved; set => hasMoved = value; }
-
+    private Vector2Int boardCoords;
 
     public DummyChessman(Chessman.Colours theColour, Chessman.Types theType, Vector2Int coords)
     {
         colour = theColour;
         type = theType;
-        boardPos = coords;
+        boardCoords = coords;
     }
 
     public Chessman.Colours Colour { 
@@ -34,8 +29,8 @@ public class DummyChessman : IComputableChessman
     }
 
     public Vector2Int BoardCoords { 
-        get => boardPos; 
-        set => boardPos = value; 
+        get => boardCoords; 
+        set => boardCoords = value; 
     }
 
     public List<Move> GenerateMoves(DummyChessman[,] boardMatrix)
@@ -54,7 +49,7 @@ public class DummyChessman : IComputableChessman
     /// <returns>The Dummy as a string.</returns>
     public override string ToString()
     {
-        string sRep = $"{GetName()} at {boardPos}\n";
+        string sRep = $"{GetName()} at {boardCoords}\n";
         return sRep;
     }
 }
@@ -84,9 +79,6 @@ public interface IComputableChessman
     Chessman.Colours Colour { get; }
     Chessman.Types Type { get; }
     Vector2Int BoardCoords { get; }
-    public int File { get; }
-    public int Rank { get; }
-    public bool HasMoved { get; }
 
     List<Move> GenerateMoves(DummyChessman[,] boardMatrix);
     string GetName();

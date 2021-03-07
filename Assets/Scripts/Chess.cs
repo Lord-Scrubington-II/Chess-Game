@@ -19,7 +19,7 @@ public static class Chess
 
     //static settings
     private static bool usingAI = false; 
-    private static bool allForOne = true; //win condition: capture one king (true), or capture them all (false)?
+    private static bool allForOne = true; //win condition: capture one king, or capture them all?
     private static bool usingAnims = true; //will chessmen slide across the board? this should be a setting
 
     //board information
@@ -30,12 +30,9 @@ public static class Chess
     //aliases for useful data values.
     public static readonly char[] BoardXAlias = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' }; //for standard chess coordinate notation
     public static readonly int[] PieceValues = { 990, 90, 50, 30, 30, 10 }; //These should correspond do the correct enum -> integer expansion in Chessman.Types
-    
-    //debug options
     public static readonly bool DEBUG = true;
     public static readonly bool ignoreTurns = false;
     
-    //static constructor. It gets called on first reference to static class.
     static Chess()
     {
         /*
@@ -60,14 +57,6 @@ public static class Chess
     public static bool UsingAnims { get => usingAnims; set => usingAnims = value; }
 
     /// <summary>
-    /// Swaps the turn state.
-    /// </summary>
-    internal static void NextTurn()
-    {
-        PlayerTurn = PlayerTurn == Chessman.Colours.Black ? Chessman.Colours.White : Chessman.Colours.Black;
-    }
-
-    /// <summary>
     /// Adds chessman to the hashsets that comprise player armies.
     /// </summary>
     /// <param name="piece">The piece to be indexed.</param>
@@ -85,6 +74,11 @@ public static class Chess
         }
 
         return chessman.Colour;
+    }
+
+    internal static void NextTurn()
+    {
+        PlayerTurn = PlayerTurn == Chessman.Colours.Black ? Chessman.Colours.White : Chessman.Colours.Black;
     }
 
     /// <summary>
@@ -157,7 +151,7 @@ public static class Chess
     }
 
     /// <summary>
-    /// The menus should call this function on scene deload.
+    /// The menus should call this function on scene load.
     /// </summary>
     internal static void ResetGame()
     {
@@ -251,51 +245,12 @@ public static class Chess
         return (DummyChessman[,])(reducedBoardMatrix.Clone());
     }
 
-    public static int PieceValueOf(IComputableChessman chessman)
-    {
-        return Chess.PieceValues[(int)chessman.Colour];
-    }
-
-    /// <summary>
-    /// Invokes the <c>WonGame()</c> method if the win conditions are detected.
-    /// </summary>
-    /// <param name="justCaptured">The piece just captured.</param>
     private static void CheckWinConditions(Chessman justCaptured)
     {
-        if (allForOne)
+        if (justCaptured.Type == Chessman.Types.King)
         {
-            if (justCaptured.Type == Chessman.Types.King)
-            {
-                Chessman.Colours winner = justCaptured.Colour == Chessman.Colours.White ? Chessman.Colours.Black : Chessman.Colours.White;
-                WonGame(winner);
-            }
-        } 
-        else
-        {
-            bool hasAKing = false;
-
-            //check the number of kings in the opponent's hash set
-            if(playerTurn == Chessman.Colours.Black)
-            {
-                foreach(var piece in WhiteArmy)
-                {
-                    Chessman chessmanCandidate = piece.GetComponent<Chessman>();
-                    if (chessmanCandidate.Type == Chessman.Types.King) hasAKing = true;
-                }
-            }
-            else
-            {
-                foreach (var piece in BlackArmy)
-                {
-                    Chessman chessmanCandidate = piece.GetComponent<Chessman>();
-                    if (chessmanCandidate.Type == Chessman.Types.King) hasAKing = true;
-                }
-            }
-
-            if (!hasAKing)
-            {
-                WonGame(playerTurn);
-            }
+            Chessman.Colours winner = justCaptured.Colour == Chessman.Colours.White ? Chessman.Colours.Black : Chessman.Colours.White;
+            WonGame(winner);
         }
     }
 
@@ -334,20 +289,16 @@ public static class Chess
     /// <returns>A copy of the hypothetical board state.</returns>
     public static DummyChessman[,] Play(Move move, DummyChessman[,] board)
     {
-        
+        /*
         Vector2Int startSquare = move.StartSquare;
         Vector2Int targetSquare = move.TargetSquare;
         DummyChessman movingPiece = board[startSquare.x, startSquare.y];
-
-        if(movingPiece == null)
-        {
-            throw new InvalidOperationException("Theoretical move invocation method attempted to apply an invalid move.");
-        }
+        //Chessman movingChessman = movingPiece.GetComponent<Chessman>();
 
         if (move.IsCastle)
         {
             //move king to correct spot
-            board[targetSquare.x, targetSquare.y] = movingPiece;
+            board[targetSquare.x, targetSquare.y] = board[startSquare.x, startSquare.y];
 
             //-> move rook to correct spot
             //find the step direction to the empty square next to the king.
@@ -360,56 +311,63 @@ public static class Chess
 
             //move the rook to the other side of the king
             Vector2Int castleBoardPos = new Vector2Int(targetSquare.x + stepToNewRookPos, targetSquare.y);
-            MovePiece(castleTarget, castleBoardPos, ref board);
+            MovePiece(castleTarget, castleBoardPos);
 
         }
         else
         {
-            DummyChessman targetChessman = board[targetSquare.x, targetSquare.y];
+            GameObject targetPiece = PieceAtPosition(targetSquare.x, targetSquare.y);
 
             //if attacking a piece
-            if (targetChessman != null)
+            if (targetPiece != null)
             {
-                board[targetSquare.x, targetSquare.y] = null;
+                Chessman targetChessman = targetPiece.GetComponent<Chessman>();
+
+                UnIndexChessman(targetPiece);
+                SetSquareEmpty(targetSquare.x, targetSquare.y);
+
+                if (targetChessman.Type == Chessman.Types.King)
+                {
+                    Chessman.Colours winner = targetChessman.Colour == Chessman.Colours.White ? Chessman.Colours.Black : Chessman.Colours.White;
+                    WonGame(winner);
+                }
+
+                UnityEngine.Object.Destroy(targetPiece);
             }
 
             //change the coordinates of the chessman in the backend
-            MovePiece(movingPiece, targetSquare, ref board);
+            MovePiece(movingPiece, targetSquare);
 
         }
-        
-        return board;
+        NextTurn();
+        DestroyMovePlates();
+        */
+        return null;
         
     }
 
-    /// <summary>
-    /// Moves a dummy chessman across a reduced board matrix.
-    /// </summary>
-    /// <param name="movingChessman">The dummy chessman to be moved.</param>
-    /// <param name="targetSquare">The target square on the reduced board.</param>
-    /// <param name="board">A reduced board matrix, passed by reference.</param>
-    private static void MovePiece(DummyChessman movingChessman, Vector2Int targetSquare, ref DummyChessman[,] board)
+    private static void MovePiece(DummyChessman movingPiece, Vector2Int targetSquare, ref DummyChessman[,] board)
     {
-        
-        if (movingChessman != null)
+        /*
+        if (movingPiece != null)
         {
             if (PositionIsValid(targetSquare.x, targetSquare.y))
             {
-                board[movingChessman.File, movingChessman.Rank] = null;
-                movingChessman.BoardCoords = targetSquare;
-                board[movingChessman.File, movingChessman.Rank] = movingChessman;
+                board[movingChessman.File, movingChessman.Rank
+                movingChessman.SetBoardPos(targetSquare);
                 movingChessman.HasMoved = true;
+                AddPieceToMatrix(movingPiece);
             }
             else
             {
-                throw new IndexOutOfRangeException("Theoretical move invocation method attempted to move Dummy Chessman to an index outside of the board.");
+                throw new IndexOutOfRangeException("Attempted to move Chessman to an index outside of the board.");
             }
         }
         else
         {
-            throw new NullReferenceException("Theoretical move invocation method attempted to move a null-valued Dummy Chessman.");
+            throw new NullReferenceException("Attempted to move a null-valued Chessman.");
         }
-        
+        */
     }
 
     /// <summary>

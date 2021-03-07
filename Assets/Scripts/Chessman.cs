@@ -58,10 +58,10 @@ public class Chessman : MonoBehaviour, IComputableChessman
     // Start is called before the first frame update
     void Start()
     {
-        readyChessman();
+        ReadyChessman();
     }
 
-    private void readyChessman()
+    private void ReadyChessman()
     {
         gameObject.transform.localScale = DefaultScale;
         CalibrateWorldPos();

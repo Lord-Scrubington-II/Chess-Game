@@ -275,6 +275,11 @@ PrefabInstance:
       propertyPath: m_Text
       value: Fear what you do not understand.
       objectReference: {fileID: 0}
+    - target: {fileID: 7956252186131143474, guid: 6702821437238ee4f802f13d280ae721,
+        type: 3}
+      propertyPath: m_FontData.m_FontSize
+      value: 22
+      objectReference: {fileID: 0}
     - target: {fileID: 7956252186131143475, guid: 6702821437238ee4f802f13d280ae721,
         type: 3}
       propertyPath: m_AnchoredPosition.y

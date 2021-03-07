@@ -1096,6 +1096,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Post Processing Module
       objectReference: {fileID: 0}
+    - target: {fileID: 1737140566129750909, guid: 0b81026466c55f24ea32374e673842cf,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0b81026466c55f24ea32374e673842cf, type: 3}
 --- !u!1001 &4018556205916762844

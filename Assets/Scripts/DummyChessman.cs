@@ -283,13 +283,23 @@ public class DummyChessman : IComputableChessman
 
     private void IndexMove(int targetX, int targetY, ref List<Move> myMoves, in IComputableChessman[,] board, bool isCastle)
     {
-        if (Chess.PositionIsValid(targetX, targetY) 
-            && board[targetX, targetY] != null
-            && board[targetX, targetY].Colour != this.Colour)
+        if (Chess.PositionIsValid(targetX, targetY))
         {
-            myMoves.Add(new Move(this, new Vector2Int(targetX, targetY), Chess.ReducedBoardMatrix, isCastle));
+            //Capture Case
+            if (board[targetX, targetY] != null)
+            {
+                //only index a capture if the target is an opponent.
+                if ( board[targetX, targetY].Colour != this.Colour)
+                {
+                    myMoves.Add(new Move(this, new Vector2Int(targetX, targetY), Chess.ReducedBoardMatrix, isCastle));
+                }
+            } 
+            else
+            {
+                //this covers normal moves
+                myMoves.Add(new Move(this, new Vector2Int(targetX, targetY), Chess.ReducedBoardMatrix, isCastle));
+            }
         }
-
     }
 
     public string GetName()

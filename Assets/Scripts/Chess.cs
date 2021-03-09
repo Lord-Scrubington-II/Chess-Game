@@ -24,7 +24,7 @@ public static class Chess
     private static bool usingAI = false;
     private static Chessman.Colours AIColour = Chessman.Colours.Black;
     private static bool allForOne = false; //win condition: capture one king (true), or capture them all (false)?
-    private static bool usingAnims = false; //will chessmen slide across the board? this should be a setting
+    private static bool usingAnims = true; //will chessmen slide across the board? this should be a setting
 
     //board information
     public static readonly int BoardXYMax = 7;
@@ -74,8 +74,24 @@ public static class Chess
         PlayerToMove = PlayerToMove == Chessman.Colours.Black ? Chessman.Colours.White : Chessman.Colours.Black;
         if(PlayerToMove == AIColour && ArmyOf(AIColour).Count > 0 && !GameOver)
         {
+            
             Move toPlay = AIModule.SelectMove(reducedBoardMatrix);
-            AIModule.AIPlayMove(toPlay);
+            if (usingAnims)
+            {
+                Chessman.ControlsFrozen = true;
+                //why is this necessary? This is because coroutines cannot be directly invoked
+                //from a static class. This should simulate the act of clicking on and
+                //moving a piece well enough. If I even did it right, that is...
+
+                //retrieve reference to moving piece
+                GameObject AIPieceToMove = PieceAtPosition(toPlay.StartSquare.x, toPlay.StartSquare.y);
+                Chessman AIChessmanToMove = AIPieceToMove.GetComponent<Chessman>();
+
+                //invoke coroutine from the chessman that is to move.
+                AIChessmanToMove.StartCoroutine(nameof(AIChessmanToMove.AIPlayMoveCoroutine), toPlay);
+
+                Chessman.ControlsFrozen = false;
+            } else { AIModule.AIPlayMove(toPlay); }
         }
     }
 
@@ -284,11 +300,42 @@ public static class Chess
             }
 
         }
-        NextTurn();
+        moveSounds.PlayChessmanSound(true);
         DestroyMovePlates();
+        NextTurn();
 
         return (DummyChessman[,])(reducedBoardMatrix.Clone());
     }
+
+    
+    private static IEnumerator PlayMoveWIthAnim(Move move)
+    {
+        Chessman.ControlsFrozen = true;
+        GameObject movingPiece = BoardMatrix[move.StartSquare.x, move.StartSquare.y];
+        GameObject targetPiece = BoardMatrix[move.TargetSquare.x, move.TargetSquare.y];
+        Vector3 piecePos = movingPiece.transform.position;
+        Vector3 targetPos = targetPiece.transform.position;
+        targetPos.z = piecePos.z; //ignore z component for Vector3.Distance() calculations
+
+        // to make knights move in a straight line
+        float xSpeedMult = Mathf.Abs(Vector3.Normalize(targetPos - piecePos).x);
+        float ySpeedMult = Mathf.Abs(Vector3.Normalize(targetPos - piecePos).y);
+
+        //GameObject[] sceneMovePlates = DisableOtherMovePlates();
+        while (Vector3.Distance(piecePos, targetPos) > float.Epsilon)
+        {
+            piecePos.x = Mathf.MoveTowards(piecePos.x, targetPos.x, Time.deltaTime * xSpeedMult * Chessman.pieceMoveSpeed);
+            piecePos.y = Mathf.MoveTowards(piecePos.y, targetPos.y, Time.deltaTime * ySpeedMult * Chessman.pieceMoveSpeed);
+
+            movingPiece.transform.position = piecePos;
+
+            yield return null;
+        }
+        Chessman.ControlsFrozen = false;
+        //EnableAllObjects(sceneMovePlates);
+        Chess.Play(move);
+    }
+    
 
     /// <summary>
     /// Gives the value of a piece by dereferencing the piece valeus array via enum-integer aliasing.
@@ -359,7 +406,7 @@ public static class Chess
                 movingChessman.HasMoved = true;
                 AddPieceToMatrix(movingPiece);
 
-                moveSounds.PlayChessmanSound(true);
+                
             } 
             else
             {
@@ -478,10 +525,17 @@ public static class Chess
     public static List<Move> IndexPossibleMoves(Chessman.Colours toMove)
     {
         List<Move> allMoves = new List<Move>();
+        List<Move> thisChessmanMoves = new List<Move>();
+        HashSet<GameObject> army = ArmyOf(toMove);
 
-        foreach(IComputableChessman chessman in ReducedBoardMatrix)
+        GameObject[,] boardCpy = BoardMatrix;
+        DummyChessman[,] rBrdCpy = ReducedBoardMatrix;
+        foreach (GameObject chesspiece in army)
         {
-            if(chessman != null && chessman.Colour == toMove) allMoves.AddRange(chessman.GenerateMoves(ReducedBoardMatrix));
+            Chessman chessman = chesspiece.GetComponent<Chessman>();
+            thisChessmanMoves = chessman.GenerateMoves(ReducedBoardMatrix);
+            //if (chessman != null && chessman.Colour == toMove) 
+                allMoves.AddRange(thisChessmanMoves);
         }
 
         return allMoves;
@@ -579,6 +633,7 @@ public static class Chess
 
     internal static class AIModule
     {
+        public static readonly float thinkDelay = 1.0f;
         public delegate Move SelectMoveDelegate(IComputableChessman[,] board);
         private static Chessman.Colours aiColour;
         public static SelectMoveDelegate SelectMove;
@@ -596,14 +651,17 @@ public static class Chess
         public static Move SelectRandomMove()
         {
             List<Move> allMoves = Chess.IndexPossibleMoves(AIColour);
-            return allMoves[UnityEngine.Random.Range(0, allMoves.Count)];
+            int randMove = UnityEngine.Random.Range(0, allMoves.Count);
+            return allMoves[randMove];
         }
 
         public static Move SelectRandomMove(IComputableChessman[,] board)
         {
-            List<Move> allMoves = Chess.IndexPossibleMoves(board, AIColour);
-            Console.WriteLine(allMoves.Count);
-            return allMoves[UnityEngine.Random.Range(0, allMoves.Count)];
+
+            //List<Move> allMoves = Chess.IndexPossibleMoves(board, AIColour);
+            List<Move> allMoves = Chess.IndexPossibleMoves(AIColour);
+            int randMove = UnityEngine.Random.Range(0, allMoves.Count);
+            return allMoves[randMove];
         }
 
         public static void AIPlayMove(Move m)

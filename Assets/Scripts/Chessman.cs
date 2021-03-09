@@ -224,12 +224,14 @@ public class Chessman : MonoBehaviour, IComputableChessman
 
     private void OnMouseUp()
     {
+        //for some reason, the game lets me click on AI-controlled piev=ces while it's "thinking."
+        //TODO: find out why the f*ck this is happening
         if (!ControlsFrozen)
         {
             if (!Chess.GameOver) ShowPossibleMoves();
             
         }
-        //broadcast event: piece clickeds
+        //broadcast event: piece clicked
     }
 
     public IEnumerator TransformPieceTo(Vector2Int targetSquare)
@@ -273,6 +275,40 @@ public class Chessman : MonoBehaviour, IComputableChessman
             InitializeMovePlates();
             moveSounds.PlayChessmanSound(false);
         }
+    }
+    public IEnumerator AIPlayMoveCoroutine(Move toPlay)
+    {
+        ControlsFrozen = true;
+
+        //allow previous audio subroutine to finish
+        yield return new WaitForSeconds(Chess.AIModule.thinkDelay / 2);
+
+        //when a chess piece is "clicked" by the AI, kill all existing moveplates
+        //and spawn new ones corresponding to this chess piece
+        Chess.DestroyMovePlates();
+        InitializeMovePlates();
+        moveSounds.PlayChessmanSound(false);
+
+        //illusion of thinking
+        yield return new WaitForSeconds(Chess.AIModule.thinkDelay);
+
+        MovePlate targetSquareMarker;
+        if (toPlay.IsCastle)
+        {
+            targetSquareMarker = PlaceCastlePlate(toPlay.TargetSquare.x, toPlay.TargetSquare.y);
+        }
+        else if (Chess.BoardMatrix[toPlay.TargetSquare.x, toPlay.TargetSquare.y] != null)
+        {
+            targetSquareMarker = PlaceAttackPlate(toPlay.TargetSquare.x, toPlay.TargetSquare.y);
+        } 
+        else
+        {
+            targetSquareMarker = PlaceMovePlate(toPlay.TargetSquare.x, toPlay.TargetSquare.y);
+            
+        }
+        targetSquareMarker.StartCoroutine(nameof(targetSquareMarker.PlayMoveWithAnim));
+
+        ControlsFrozen = false;
     }
 
     /// <summary>
@@ -472,7 +508,6 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// </summary>
     private void KingCastleMovePlates()
     {
-        
         int kingsFile = this.File;
         int kingsRank = this.Rank;
         int x;
@@ -551,7 +586,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// </summary>
     /// <param name="x">The board x coord.</param>
     /// <param name="y">The board y coord.</param>
-    public void PointMovePlate(int x, int y)
+    private void PointMovePlate(int x, int y)
     {
         if (Chess.PositionIsValid(x, y))
         {
@@ -575,7 +610,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// </summary>
     /// <param name="x">The board x coord.</param>
     /// <param name="y">The board y coord.</param>
-    private MovePlate PlaceMovePlate(int x, int y)
+    public MovePlate PlaceMovePlate(int x, int y)
     {
         Vector2Int platePos = new Vector2Int(x, y);
 
@@ -606,10 +641,12 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// </summary>
     /// <param name="x">The board x coord.</param>
     /// <param name="y">The board y coord.</param>
-    private void PlaceAttackPlate(int x, int y)
+    private MovePlate PlaceAttackPlate(int x, int y)
     {
         MovePlate movePlate = PlaceMovePlate(x, y);
         movePlate.Type = MovePlate.PlateTypes.Attack;
+
+        return movePlate;
     }
 
     /// <summary>
@@ -617,11 +654,13 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// </summary>
     /// <param name="x">The board x coord.</param>
     /// <param name="y">The board y coord.</param>
-    private void PlaceCastlePlate(int x, int y)
+    private MovePlate PlaceCastlePlate(int x, int y)
     {
         MovePlate movePlate = PlaceMovePlate(x, y);
         movePlate.Type = MovePlate.PlateTypes.Castle;
         movePlate.MoveData = new Move(this, movePlate.BoardPos, Chess.ReducedBoardMatrix, true);
+
+        return movePlate;
     }
 
     /// <summary>
@@ -639,7 +678,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// <returns>The Chessman as a string.</returns>
     public override string ToString()
     {
-        string sRep = $"{GetName()} at {Chess.BoardXAlias[this.BoardCoords.x]}{this.BoardCoords.y + 1}\n";
+        string sRep = $"{GetName()} at {Chess.BoardXAlias[this.File]}{this.Rank + 1}\n";
         return sRep;
     }
 
@@ -889,11 +928,23 @@ public class Chessman : MonoBehaviour, IComputableChessman
 
     private void IndexMove(int targetX, int targetY, ref List<Move> myMoves, bool isCastle)
     {
-        if (Chess.PositionIsValid(targetX, targetY)
-            && Chess.PieceAtPosition(targetX, targetY) != null
-            && Chess.PieceAtPosition(targetX, targetY).GetComponent<Chessman>().Colour != this.Colour)
+        if (Chess.PositionIsValid(targetX, targetY))
         {
-            myMoves.Add(new Move(this, new Vector2Int(targetX, targetY), Chess.ReducedBoardMatrix, isCastle));
+            //Capture Case
+            if (Chess.PieceAtPosition(targetX, targetY) != null)
+            {
+                //only index a capture if the target is an opponent.
+                if(Chess.PieceAtPosition(targetX, targetY).GetComponent<Chessman>().Colour != this.Colour)
+                {
+                    myMoves.Add(new Move(this, new Vector2Int(targetX, targetY), Chess.ReducedBoardMatrix, isCastle));
+                }
+            } 
+            else
+            {
+                //these cover normal moves.
+                myMoves.Add(new Move(this, new Vector2Int(targetX, targetY), Chess.ReducedBoardMatrix, isCastle));
+            }
+            
         }
     }
 }

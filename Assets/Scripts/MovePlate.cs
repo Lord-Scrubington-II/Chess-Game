@@ -89,7 +89,7 @@ public class MovePlate : MonoBehaviour
         //TODO: broadcast event: piece moved/piece taken, have the static class handle these
         if (!Chessman.ControlsFrozen)
         {
-            if (Chess.UsingAnims) StartCoroutine(PlayMoveWIthAnim());
+            if (Chess.UsingAnims) StartCoroutine(PlayMoveWithAnim());
             else Chess.Play(MoveData);
         }
     }
@@ -99,7 +99,7 @@ public class MovePlate : MonoBehaviour
     /// <para>Moves the parent of this moveplate to the correct location over time. It thereafter invokes the Game.Play(Move m) method.</para>
     /// </summary>
     /// <returns></returns>
-    private IEnumerator PlayMoveWIthAnim()
+    public IEnumerator PlayMoveWithAnim()
     {
         Chessman.ControlsFrozen = true;
         Vector3 piecePos = parentPiece.transform.position;

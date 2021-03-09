@@ -16,7 +16,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     private static readonly Vector3 DefaultScale = new Vector3(4.4f, 4.4f, 4.4f);
     public static readonly float chessmanZ = -1.0f;
     public static readonly float masterGridOffset = -3.5f;
-    public static readonly float pieceMoveSpeed = 16.0f; //this should be a setting
+    public static readonly float pieceMoveSpeed = 12.0f; //this should be a setting
     private bool hasMoved = false;
     private delegate void IndexPossibleMoves(Chessman piece, GameObject[,] boardMatrix);
     private static bool controlsFrozen = false;
@@ -24,6 +24,8 @@ public class Chessman : MonoBehaviour, IComputableChessman
     //declarations of sprite refs.
     [SerializeField] private Sprite blackKing, blackQueen, blackBishop, blackKnight, blackRook, blackPawn;
     [SerializeField] private Sprite whiteKing, whiteQueen, whiteBishop, whiteKnight, whiteRook, whitePawn;
+
+    private AudioSwitch moveSounds;
 
 
     //who needs inheritance when you can just  t w o - d i m e n s i o n a l  e n u m
@@ -59,6 +61,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     void Start()
     {
         ReadyChessman();
+        moveSounds = GameObject.Find("Board").GetComponent<AudioSwitch>();
     }
 
     private void ReadyChessman()
@@ -224,8 +227,9 @@ public class Chessman : MonoBehaviour, IComputableChessman
         if (!ControlsFrozen)
         {
             if (!Chess.GameOver) ShowPossibleMoves();
+            
         }
-        //broadcast event: piece clicked
+        //broadcast event: piece clickeds
     }
 
     public IEnumerator TransformPieceTo(Vector2Int targetSquare)
@@ -267,6 +271,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
         {
             Chess.DestroyMovePlates();
             InitializeMovePlates();
+            moveSounds.PlayChessmanSound(false);
         }
     }
 
@@ -337,6 +342,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// </summary>
     private void BishopMovePlates()
     {
+        /*
         int xIncr = 1;
         int yIncr = 1;
         for (int i = 0; i < 2; i++)
@@ -348,12 +354,12 @@ public class Chessman : MonoBehaviour, IComputableChessman
             }
             yIncr *= -1;
         }
-        /*
+        */
         LineMovePlates(1, 1);
         LineMovePlates(1, -1);
         LineMovePlates(-1, 1);
         LineMovePlates(-1, -1);
-        */
+        
     }
 
     /// <summary>
@@ -535,7 +541,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
                 }
                 xOffset *= -1;
             }
-            BitSwapInts(ref xOffset, ref yOffset);
+            Chess.BitSwapInts(ref xOffset, ref yOffset);
         }
     }
 
@@ -562,17 +568,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
         }
     }
 
-    /// <summary>
-    /// This function passes two signed ints by reference and swaps their values.
-    /// </summary>
-    /// <param name="i">The first integer.</param>
-    /// <param name="j">The second integer.</param>
-    private void BitSwapInts(ref int i, ref int j)
-    {
-        i ^= j;
-        j ^= i;
-        i ^= j;
-    }
+
 
     /// <summary>
     /// Places an move-type plate at the specified board location.
@@ -652,7 +648,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     /// </summary>
     /// <param name="boardMatrix">A dummy copy of the board matrix.</param>
     /// <returns>A list of my available moves.</returns>
-    public List<Move> GenerateMoves(DummyChessman[,] boardMatrix)
+    public List<Move> GenerateMoves(IComputableChessman[,] boardMatrix)
     {
         List<Move> moves = new List<Move>();
 
@@ -706,11 +702,12 @@ public class Chessman : MonoBehaviour, IComputableChessman
                     //generate the corresponding move.
                     targetX = File + i;
                     targetY = Rank + j;
-                    myMoves.Add(new Move(this, new Vector2Int(targetX, targetY), Chess.ReducedBoardMatrix, false));
+                    IndexMove(targetX, targetY, ref myMoves, false);
                 }
             }
         }
 
+        //but also, what if the king can castle?
         KingsCastleMoves(ref myMoves);
 
         return myMoves;
@@ -751,7 +748,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
                         && !Chess.BoardMatrix[x, y].GetComponent<Chessman>().HasMoved)
                     {
                         //then permit the king to castle.
-                        myMoves.Add(new Move(this, new Vector2Int(x, y), Chess.ReducedBoardMatrix, false));
+                        IndexMove(x, y, ref myMoves, true);
                     }
                 }
                 step *= -1;
@@ -794,7 +791,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
         //or we reach end of board
         while (Chess.PositionIsValid(x, y) && Chess.PieceAtPosition(x, y) == null)
         {
-            myMoves.Add(new Move(this, new Vector2Int(x, y), Chess.ReducedBoardMatrix, false));
+            IndexMove(x, y, ref myMoves, false);
             x += xIncr;
             y += yIncr;
         }
@@ -802,7 +799,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
         //at the end of the attack path, if the position is valid there must be a piece.
         if (Chess.PositionIsValid(x, y) && (Chess.PieceAtPosition(x, y).GetComponent<Chessman>().Colour != this.Colour))
         {
-            myMoves.Add(new Move(this, new Vector2Int(x, y), Chess.ReducedBoardMatrix, false));
+            IndexMove(x, y, ref myMoves, false);
         }
 
         return myMoves;
@@ -849,7 +846,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
                     //if the spot is valid, has a piece, and contains an enemy, place attack plate
                     if ((target != null) && (target.GetComponent<Chessman>().Colour != Colour))
                     {
-                        myMoves.Add(new Move(this, new Vector2Int(x, y), Chess.ReducedBoardMatrix, false));
+                        IndexMove(x, y, ref myMoves, false);
                     }
                 }
                 //switch to left
@@ -879,20 +876,24 @@ public class Chessman : MonoBehaviour, IComputableChessman
                     //generate the corresponding move.
                     targetX = File + xOffset;
                     targetY = Rank + yOffset;
-                    myMoves.Add(new Move(this, new Vector2Int(targetX, targetY), Chess.ReducedBoardMatrix, false));
+                    IndexMove(targetX, targetY, ref myMoves, false);
                     yOffset *= -1;
                 }
                 xOffset *= -1;
             }
-            BitSwapInts(ref xOffset, ref yOffset);
+            Chess.BitSwapInts(ref xOffset, ref yOffset);
         }
 
         return myMoves;
     }
 
-    internal class AIModule
+    private void IndexMove(int targetX, int targetY, ref List<Move> myMoves, bool isCastle)
     {
-
+        if (Chess.PositionIsValid(targetX, targetY)
+            && Chess.PieceAtPosition(targetX, targetY) != null
+            && Chess.PieceAtPosition(targetX, targetY).GetComponent<Chessman>().Colour != this.Colour)
+        {
+            myMoves.Add(new Move(this, new Vector2Int(targetX, targetY), Chess.ReducedBoardMatrix, isCastle));
+        }
     }
-    
 }

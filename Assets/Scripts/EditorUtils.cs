@@ -9,6 +9,7 @@ public class EditorUtils : MonoBehaviour
     public static readonly float gridUnit = 1;
     private static HashSet<GameObject> allChessmen = new HashSet<GameObject>();
     private Chessman chessman;
+    [SerializeField] private bool clobberClones = true; // turn off before duplicating, and remember to turn back on!
 
     // Start is called before the first frame update
     void Start()
@@ -42,7 +43,7 @@ public class EditorUtils : MonoBehaviour
             SnapToGrid(chessman);
             chessman.SelectSprite();
             chessman.name = chessman.ToString();
-            HandleDuplicateChessmen(); //let's see if this works.
+            if(clobberClones) HandleDuplicateChessmen(); //let's see if this works.
         }
     }
 

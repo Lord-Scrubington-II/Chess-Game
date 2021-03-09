@@ -978,20 +978,15 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 7956252185968610538, guid: 6702821437238ee4f802f13d280ae721,
+    - target: {fileID: 754734856216271345, guid: 6702821437238ee4f802f13d280ae721,
         type: 3}
-      propertyPath: m_Text
-      value: Top Text
+      propertyPath: m_AnchoredPosition.x
+      value: -124.499985
       objectReference: {fileID: 0}
     - target: {fileID: 7956252186616393057, guid: 6702821437238ee4f802f13d280ae721,
         type: 3}
       propertyPath: m_Name
       value: DefaultCanvas
-      objectReference: {fileID: 0}
-    - target: {fileID: 7956252186616393057, guid: 6702821437238ee4f802f13d280ae721,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7956252186616393058, guid: 6702821437238ee4f802f13d280ae721,
         type: 3}

@@ -49,7 +49,7 @@ public struct Move
     /// <param name="toSquare">The target square of the Chessman.</param>
     /// <param name="board">A copy of the board state that consists of dummy chessmen.</param>
     /// <param name="castle">Is this move a castle?</param>
-    public Move(Chessman invoker, Vector2Int toSquare, DummyChessman[,] board, bool castle)
+    public Move(IComputableChessman invoker, Vector2Int toSquare, DummyChessman[,] board, bool castle)
     {
 
         startSquare = invoker.BoardCoords;

@@ -150,3 +150,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c415e3654c8c604cb9c5a551d99bd38, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  clobberClones: 1

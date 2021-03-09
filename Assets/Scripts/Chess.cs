@@ -5,6 +5,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// This static class implements the chess engine behind Bad Chess.
+/// </summary>
 public static class Chess
 {
     //the board state and contents of each army
@@ -18,9 +21,10 @@ public static class Chess
     private static bool gameOver = false;
 
     //static settings
-    private static bool usingAI = false; 
+    private static bool usingAI = false;
+    private static Chessman.Colours AIColour = Chessman.Colours.Black;
     private static bool allForOne = false; //win condition: capture one king (true), or capture them all (false)?
-    private static bool usingAnims = true; //will chessmen slide across the board? this should be a setting
+    private static bool usingAnims = false; //will chessmen slide across the board? this should be a setting
 
     //board information
     public static readonly int BoardXYMax = 7;
@@ -34,6 +38,8 @@ public static class Chess
     //debug options
     public static readonly bool DEBUG = true;
     public static readonly bool ignoreTurns = false;
+
+    internal static AudioSwitch moveSounds;
     
     //static constructor. It gets called on first reference to static class.
     static Chess()
@@ -45,6 +51,7 @@ public static class Chess
         };
         */
         //RefreshBoard();
+        moveSounds = GameObject.Find("Board").GetComponent<AudioSwitch>();
         toMove = Chessman.Colours.White;
         GameOver = false;
     }
@@ -65,6 +72,21 @@ public static class Chess
     internal static void NextTurn()
     {
         PlayerToMove = PlayerToMove == Chessman.Colours.Black ? Chessman.Colours.White : Chessman.Colours.Black;
+        if(PlayerToMove == AIColour && ArmyOf(AIColour).Count > 0 && !GameOver)
+        {
+            Move toPlay = AIModule.SelectMove(reducedBoardMatrix);
+            AIModule.AIPlayMove(toPlay);
+        }
+    }
+
+    public static HashSet<GameObject> ArmyOf(Chessman.Colours colour)
+    {
+        if(colour == Chessman.Colours.Black)
+        {
+            return BlackArmy;
+        }
+
+        return WhiteArmy;
     }
 
     /// <summary>
@@ -171,6 +193,7 @@ public static class Chess
         toMove = Chessman.Colours.White;
         GameOver = false;
         Chessman.ControlsFrozen = false;
+        moveSounds = GameObject.Find("Board").GetComponent<AudioSwitch>();
     }
 
     /// <summary>
@@ -267,6 +290,11 @@ public static class Chess
         return (DummyChessman[,])(reducedBoardMatrix.Clone());
     }
 
+    /// <summary>
+    /// Gives the value of a piece by dereferencing the piece valeus array via enum-integer aliasing.
+    /// </summary>
+    /// <param name="chessman">The chessman to evaluate.</param>
+    /// <returns>The value of the chessman.</returns>
     public static int PieceValueOf(IComputableChessman chessman)
     {
         return Chess.PieceValues[(int)chessman.Colour];
@@ -330,6 +358,8 @@ public static class Chess
                 movingChessman.SetBoardPos(targetSquare);
                 movingChessman.HasMoved = true;
                 AddPieceToMatrix(movingPiece);
+
+                moveSounds.PlayChessmanSound(true);
             } 
             else
             {
@@ -445,13 +475,13 @@ public static class Chess
     /// </summary>
     /// <param name="toMove">Player to move.</param>
     /// <returns>All current possible moves.</returns>
-    public static List<Move> GenerateAllMoves(Chessman.Colours toMove)
+    public static List<Move> IndexPossibleMoves(Chessman.Colours toMove)
     {
         List<Move> allMoves = new List<Move>();
 
-        foreach(DummyChessman chessman in ReducedBoardMatrix)
+        foreach(IComputableChessman chessman in ReducedBoardMatrix)
         {
-            if(chessman.Colour == toMove) allMoves.AddRange(chessman.GenerateMoves(ReducedBoardMatrix));
+            if(chessman != null && chessman.Colour == toMove) allMoves.AddRange(chessman.GenerateMoves(ReducedBoardMatrix));
         }
 
         return allMoves;
@@ -463,16 +493,59 @@ public static class Chess
     /// <param name="board">The board state, expressed as a 2-D Matrix of Dummy Chessmen.</param>
     /// <param name="toMove">Player to move.</param>
     /// <returns>All possible moves on the given board.</returns>
-    public static List<Move> GenerateAllMoves(DummyChessman[,] board, Chessman.Colours toMove)
+    public static List<Move> IndexPossibleMoves(in IComputableChessman[,] board, Chessman.Colours toMove)
     {
         List<Move> allMoves = new List<Move>();
 
-        foreach (DummyChessman chessman in board)
+        foreach (IComputableChessman chessman in board)
         {
-            if (chessman.Colour == toMove) allMoves.AddRange(chessman.GenerateMoves(board));
+            if (chessman != null && chessman.Colour == toMove) allMoves.AddRange(chessman.GenerateMoves(board));
         }
 
         return allMoves;
+    }
+
+    /// <summary>
+    /// This function passes two signed ints by reference and swaps their values.
+    /// </summary>
+    /// <param name="i">The first integer.</param>
+    /// <param name="j">The second integer.</param>
+    public static void BitSwapInts(ref int i, ref int j)
+    {
+        i ^= j;
+        j ^= i;
+        i ^= j;
+    }
+
+    /// <summary>
+    /// The board evaluation function.
+    /// </summary>
+    /// <param name="board">The board state to evaluate.</param>
+    /// <param name="BlackToMove">Is it black to move?</param>
+    /// <returns></returns>
+    public static int Evaluate(in DummyChessman[,] board, bool BlackToMove)
+    {
+        int whiteMaterial = 0;
+        int blackMaterial = 0;
+        int playerMult = BlackToMove ? -1 : 1;
+
+        foreach (DummyChessman chessman in board)
+        {
+            if(chessman != null)
+            {
+                if(chessman.Colour == Chessman.Colours.White)
+                {
+                    whiteMaterial += PieceValueOf(chessman);
+                } else
+                {
+                    blackMaterial += PieceValueOf(chessman);
+                }
+            }
+        }
+
+        int boardEvaluation = whiteMaterial + blackMaterial;
+
+        return boardEvaluation * playerMult;
     }
 
     public static void WonGame(Chessman.Colours victor)
@@ -501,6 +574,42 @@ public static class Chess
     {
         ResetGame();
         SceneManager.LoadScene(0);
+    }
+
+
+    internal static class AIModule
+    {
+        public delegate Move SelectMoveDelegate(IComputableChessman[,] board);
+        private static Chessman.Colours aiColour;
+        public static SelectMoveDelegate SelectMove;
+
+        public static Chessman.Colours AIColour { get => aiColour; set => aiColour = value; }
+
+        static AIModule()
+        {
+            AIColour = Chess.AIColour;
+
+            //TODO: multiple types of move selection.
+            SelectMove = SelectRandomMove;
+        }
+
+        public static Move SelectRandomMove()
+        {
+            List<Move> allMoves = Chess.IndexPossibleMoves(AIColour);
+            return allMoves[UnityEngine.Random.Range(0, allMoves.Count)];
+        }
+
+        public static Move SelectRandomMove(IComputableChessman[,] board)
+        {
+            List<Move> allMoves = Chess.IndexPossibleMoves(board, AIColour);
+            Console.WriteLine(allMoves.Count);
+            return allMoves[UnityEngine.Random.Range(0, allMoves.Count)];
+        }
+
+        public static void AIPlayMove(Move m)
+        {
+            Chess.Play(m);
+        }
     }
 
 

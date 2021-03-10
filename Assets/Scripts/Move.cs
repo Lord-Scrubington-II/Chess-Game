@@ -35,9 +35,29 @@ public struct Move
         startSquare = fromSquare;
         targetSquare = toSquare;
         isCastle = castle;
+        if (board != null)
+        {
+            movingChessman = board[startSquare.x, startSquare.y];
+            if (castle) //set target to rook
+            {
+                //find the step direction to the empty square next to the king.
+                //recall that this spot is guaranteed to exist if the king can castle
+                int stepToCastleTarget = board[targetSquare.x - 1, targetSquare.y] == null ? 1 : -1;
+                int stepToNewRookPos = stepToCastleTarget * -1;
 
-        movingChessman = board[startSquare.x, startSquare.y];
-        targetingChessman = board[targetSquare.x, targetSquare.y];
+                //find the rook to castle with. The nonempty square adjacent to the king contains the rook.
+                targetingChessman = board[targetSquare.x + stepToCastleTarget, targetSquare.y];
+            }
+            else
+            {
+                targetingChessman = board[targetSquare.x, targetSquare.y];
+            }
+        }
+        else
+        {
+            movingChessman = null;
+            targetingChessman = null;
+        }
         //TODO: change target to the castling rook if is a castle.
     }
 
@@ -69,6 +89,11 @@ public struct Move
     {
         //return boardMatrixPreImage;
         throw new NotImplementedException();
+    }
+
+    public bool isGreaterThan(Move m)
+    {
+        return false;
     }
 
     /// <summary>

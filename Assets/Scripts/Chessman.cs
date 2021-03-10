@@ -224,11 +224,22 @@ public class Chessman : MonoBehaviour, IComputableChessman
 
     private void OnMouseUp()
     {
-        //for some reason, the game lets me click on AI-controlled piev=ces while it's "thinking."
+        //for some reason, the game lets me click on AI-controlled pieces while it's "thinking."
         //TODO: find out why the f*ck this is happening
-        if (!ControlsFrozen)
+        if (!ControlsFrozen && !Chess.GameOver)
         {
-            if (!Chess.GameOver) ShowPossibleMoves();
+            if(Chess.UsingAI)
+            {
+                if (this.Colour != Chess.AIColour)
+                {
+                    ShowPossibleMoves();
+                }
+
+            } 
+            else
+            {
+                ShowPossibleMoves();
+            }
             
         }
         //broadcast event: piece clicked
@@ -730,6 +741,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
         int targetY;
         List<Move> myMoves = new List<Move>();
 
+        
         //for all squares around the king...
         for (int i = -1; i <= 1; i++)
         {
@@ -745,7 +757,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
                 }
             }
         }
-
+        
         //but also, what if the king can castle?
         KingsCastleMoves(ref myMoves);
 
@@ -758,6 +770,8 @@ public class Chessman : MonoBehaviour, IComputableChessman
         int kingsRank = this.Rank;
         int x;
         int y;
+
+        GameObject[,] boardCpy = Chess.BoardMatrix;
 
         //if the king has not moved...
         if (!this.hasMoved)
@@ -787,7 +801,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
                         && !Chess.BoardMatrix[x, y].GetComponent<Chessman>().HasMoved)
                     {
                         //then permit the king to castle.
-                        IndexMove(x, y, ref myMoves, true);
+                        IndexMove(x - step, y, ref myMoves, true);
                     }
                 }
                 step *= -1;
@@ -798,12 +812,12 @@ public class Chessman : MonoBehaviour, IComputableChessman
     private List<Move> RookMoves()
     {
         List<Move> myMoves = new List<Move>();
-
+        
         myMoves.AddRange(LineMoves(0, 1));
         myMoves.AddRange(LineMoves(0, -1));
         myMoves.AddRange(LineMoves(1, 0));
         myMoves.AddRange(LineMoves(-1, 0));
-
+        
         return myMoves;
     }
 

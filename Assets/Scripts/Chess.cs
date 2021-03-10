@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+//using Priority_Queue; // \(>_<)/ why does it have to be this way
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -21,8 +23,8 @@ public static class Chess
     private static bool gameOver = false;
 
     //static settings
-    private static bool usingAI = false;
-    private static Chessman.Colours AIColour = Chessman.Colours.Black;
+    private static bool usingAI = true;
+    private static Chessman.Colours aiColour = Chessman.Colours.Black;
     private static bool allForOne = false; //win condition: capture one king (true), or capture them all (false)?
     private static bool usingAnims = true; //will chessmen slide across the board? this should be a setting
 
@@ -65,33 +67,38 @@ public static class Chess
     public static bool GameOver { get => gameOver; private set => gameOver = value; }
     public static bool UsingAI { get => usingAI; private set => usingAI = value; }
     public static bool UsingAnims { get => usingAnims; set => usingAnims = value; }
+    public static Chessman.Colours AIColour { get => aiColour; internal set => aiColour = value; }
 
     /// <summary>
-    /// Swaps the turn state.
+    /// Swaps the turn state. Also handles the AI's turn if the AI is playing.
     /// </summary>
     internal static void NextTurn()
     {
         PlayerToMove = PlayerToMove == Chessman.Colours.Black ? Chessman.Colours.White : Chessman.Colours.Black;
-        if(PlayerToMove == AIColour && ArmyOf(AIColour).Count > 0 && !GameOver)
+
+        if (UsingAI) //The AI Moves.
         {
-            
-            Move toPlay = AIModule.SelectMove(reducedBoardMatrix);
-            if (usingAnims)
+            if( PlayerToMove == AIColour && ArmyOf(AIColour).Count > 0 && !GameOver)
             {
-                Chessman.ControlsFrozen = true;
-                //why is this necessary? This is because coroutines cannot be directly invoked
-                //from a static class. This should simulate the act of clicking on and
-                //moving a piece well enough. If I even did it right, that is...
 
-                //retrieve reference to moving piece
-                GameObject AIPieceToMove = PieceAtPosition(toPlay.StartSquare.x, toPlay.StartSquare.y);
-                Chessman AIChessmanToMove = AIPieceToMove.GetComponent<Chessman>();
+                Move toPlay = AIModule.SelectMove(reducedBoardMatrix);
+                if (usingAnims)
+                {
+                    /**
+                     * Why is this necessary? This is because coroutines cannot be directly invoked
+                     * from a static class. This should simulate the act of clicking on and
+                     * moving a piece well enough. If I even did it right, that is...
+                     */
 
-                //invoke coroutine from the chessman that is to move.
-                AIChessmanToMove.StartCoroutine(nameof(AIChessmanToMove.AIPlayMoveCoroutine), toPlay);
+                    //retrieve reference to moving piece
+                    GameObject AIPieceToMove = PieceAtPosition(toPlay.StartSquare.x, toPlay.StartSquare.y);
+                    Chessman AIChessmanToMove = AIPieceToMove.GetComponent<Chessman>();
 
-                Chessman.ControlsFrozen = false;
-            } else { AIModule.AIPlayMove(toPlay); }
+                    //invoke coroutine from the chessman that is to move.
+                    AIChessmanToMove.StartCoroutine(nameof(AIChessmanToMove.AIPlayMoveCoroutine), toPlay);
+                }
+                else { AIModule.AIPlayMove(toPlay); } // no anims invocation
+            }
         }
     }
 
@@ -153,7 +160,8 @@ public static class Chess
     {
         Chessman cm = newPiece.GetComponent<Chessman>();
         BoardMatrix[cm.File, cm.Rank] = newPiece;
-        ReducedBoardMatrix[cm.File, cm.Rank] = new DummyChessman(cm.Colour, cm.Type, cm.BoardCoords);
+        bool newPieceHasMoved = cm.HasMoved;
+        ReducedBoardMatrix[cm.File, cm.Rank] = new DummyChessman(cm.Colour, cm.Type, cm.BoardCoords, newPieceHasMoved);
     }
 
     /// <summary>
@@ -208,7 +216,7 @@ public static class Chess
 
         toMove = Chessman.Colours.White;
         GameOver = false;
-        Chessman.ControlsFrozen = false;
+        Chessman.ControlsFrozen = UsingAI && AIColour == Chessman.Colours.White ? true : false;
         moveSounds = GameObject.Find("Board").GetComponent<AudioSwitch>();
     }
 
@@ -304,10 +312,12 @@ public static class Chess
         DestroyMovePlates();
         NextTurn();
 
-        return (DummyChessman[,])(reducedBoardMatrix.Clone());
+        DummyChessman[,] newBoard = (DummyChessman[,])(reducedBoardMatrix.Clone());
+
+        return newBoard;
     }
 
-    
+    /*
     private static IEnumerator PlayMoveWIthAnim(Move move)
     {
         Chessman.ControlsFrozen = true;
@@ -335,6 +345,7 @@ public static class Chess
         //EnableAllObjects(sceneMovePlates);
         Chess.Play(move);
     }
+    */
     
 
     /// <summary>
@@ -344,7 +355,7 @@ public static class Chess
     /// <returns>The value of the chessman.</returns>
     public static int PieceValueOf(IComputableChessman chessman)
     {
-        return Chess.PieceValues[(int)chessman.Colour];
+        return Chess.PieceValues[(int)chessman.Type];
     }
 
     /// <summary>
@@ -424,17 +435,28 @@ public static class Chess
     /// </summary>
     /// <param name="move">The Move to apply to the board.</param>
     /// <param name="board">The board on which the Move should be applied.</param>
-    /// <returns>A copy of the hypothetical board state.</returns>
+    /// <returns>Another reference to the board that contains the hypothetical board state.</returns>
     public static DummyChessman[,] Play(Move move, DummyChessman[,] board)
     {
-        
         Vector2Int startSquare = move.StartSquare;
         Vector2Int targetSquare = move.TargetSquare;
         DummyChessman movingPiece = board[startSquare.x, startSquare.y];
-
-        if(movingPiece == null)
+        bool reee = false;
+        
+        if (movingPiece == null)
         {
-            throw new InvalidOperationException("Theoretical move invocation method attempted to apply an invalid move.");
+            try
+            {
+                throw new InvalidOperationException("Theoretical move invocation method attempted to apply an invalid move.");
+            }
+            catch (InvalidOperationException)
+            {
+                reee = true;
+            }
+        }
+        if (reee)
+        {
+            Console.WriteLine("reee");
         }
 
         if (move.IsCastle)
@@ -453,11 +475,11 @@ public static class Chess
 
             //move the rook to the other side of the king
             Vector2Int castleBoardPos = new Vector2Int(targetSquare.x + stepToNewRookPos, targetSquare.y);
-            MovePiece(castleTarget, castleBoardPos, ref board);
+            board = MovePiece(castleTarget, castleBoardPos, board);
 
         }
         else
-        {
+        { 
             DummyChessman targetChessman = board[targetSquare.x, targetSquare.y];
 
             //if attacking a piece
@@ -467,7 +489,7 @@ public static class Chess
             }
 
             //change the coordinates of the chessman in the backend
-            MovePiece(movingPiece, targetSquare, ref board);
+            board = MovePiece(movingPiece, targetSquare, board);
 
         }
         
@@ -480,10 +502,10 @@ public static class Chess
     /// </summary>
     /// <param name="movingChessman">The dummy chessman to be moved.</param>
     /// <param name="targetSquare">The target square on the reduced board.</param>
-    /// <param name="board">A reduced board matrix, passed by reference.</param>
-    private static void MovePiece(DummyChessman movingChessman, Vector2Int targetSquare, ref DummyChessman[,] board)
+    /// <param name="board">A reduced board matrix.</param>
+    private static DummyChessman[,] MovePiece(DummyChessman movingChessman, Vector2Int targetSquare, DummyChessman[,] theBoard)
     {
-        
+        DummyChessman[,] board = (DummyChessman[,])theBoard.Clone();
         if (movingChessman != null)
         {
             if (PositionIsValid(targetSquare.x, targetSquare.y))
@@ -491,7 +513,7 @@ public static class Chess
                 board[movingChessman.File, movingChessman.Rank] = null;
                 movingChessman.BoardCoords = targetSquare;
                 board[movingChessman.File, movingChessman.Rank] = movingChessman;
-                movingChessman.HasMoved = true;
+                board[movingChessman.File, movingChessman.Rank].HasMoved = true;
             }
             else
             {
@@ -500,9 +522,11 @@ public static class Chess
         }
         else
         {
-            throw new NullReferenceException("Theoretical move invocation method attempted to move a null-valued Dummy Chessman.");
+            throw new NullReferenceException("Theoretical move invocation method attempted to move a null-valued Dummy Chessman." +
+                " At square " + targetSquare);
         }
-        
+
+        return board;
     }
 
     /// <summary>
@@ -525,17 +549,17 @@ public static class Chess
     public static List<Move> IndexPossibleMoves(Chessman.Colours toMove)
     {
         List<Move> allMoves = new List<Move>();
-        List<Move> thisChessmanMoves = new List<Move>();
+        List<Move> thisChessmanMoves;
         HashSet<GameObject> army = ArmyOf(toMove);
 
-        GameObject[,] boardCpy = BoardMatrix;
-        DummyChessman[,] rBrdCpy = ReducedBoardMatrix;
+        //GameObject[,] boardCpy = BoardMatrix;
+        //DummyChessman[,] rBrdCpy = ReducedBoardMatrix;
         foreach (GameObject chesspiece in army)
         {
             Chessman chessman = chesspiece.GetComponent<Chessman>();
             thisChessmanMoves = chessman.GenerateMoves(ReducedBoardMatrix);
             //if (chessman != null && chessman.Colour == toMove) 
-                allMoves.AddRange(thisChessmanMoves);
+            allMoves.AddRange(thisChessmanMoves);
         }
 
         return allMoves;
@@ -546,14 +570,20 @@ public static class Chess
     /// </summary>
     /// <param name="board">The board state, expressed as a 2-D Matrix of Dummy Chessmen.</param>
     /// <param name="toMove">Player to move.</param>
-    /// <returns>All possible moves on the given board.</returns>
+    /// <returns>All possible moves for the player on the given board.</returns>
     public static List<Move> IndexPossibleMoves(in IComputableChessman[,] board, Chessman.Colours toMove)
     {
         List<Move> allMoves = new List<Move>();
+        List<Move> thisChessmanMoves;
 
         foreach (IComputableChessman chessman in board)
         {
-            if (chessman != null && chessman.Colour == toMove) allMoves.AddRange(chessman.GenerateMoves(board));
+            
+            if (chessman != null && chessman.Colour == toMove)
+            {
+                thisChessmanMoves = chessman.GenerateMoves(board);
+                allMoves.AddRange(thisChessmanMoves);
+            }
         }
 
         return allMoves;
@@ -569,37 +599,6 @@ public static class Chess
         i ^= j;
         j ^= i;
         i ^= j;
-    }
-
-    /// <summary>
-    /// The board evaluation function.
-    /// </summary>
-    /// <param name="board">The board state to evaluate.</param>
-    /// <param name="BlackToMove">Is it black to move?</param>
-    /// <returns></returns>
-    public static int Evaluate(in DummyChessman[,] board, bool BlackToMove)
-    {
-        int whiteMaterial = 0;
-        int blackMaterial = 0;
-        int playerMult = BlackToMove ? -1 : 1;
-
-        foreach (DummyChessman chessman in board)
-        {
-            if(chessman != null)
-            {
-                if(chessman.Colour == Chessman.Colours.White)
-                {
-                    whiteMaterial += PieceValueOf(chessman);
-                } else
-                {
-                    blackMaterial += PieceValueOf(chessman);
-                }
-            }
-        }
-
-        int boardEvaluation = whiteMaterial + blackMaterial;
-
-        return boardEvaluation * playerMult;
     }
 
     public static void WonGame(Chessman.Colours victor)
@@ -634,9 +633,12 @@ public static class Chess
     internal static class AIModule
     {
         public static readonly float thinkDelay = 1.0f;
-        public delegate Move SelectMoveDelegate(IComputableChessman[,] board);
+        public delegate Move MoveSelectionFunction(IComputableChessman[,] board);
+        public delegate int EvaluationFunction(in IComputableChessman[,] board, bool WhiteToMove);
         private static Chessman.Colours aiColour;
-        public static SelectMoveDelegate SelectMove;
+        public static MoveSelectionFunction SelectMove;
+        private static EvaluationFunction Evaluate;
+        internal static int AISearchDepth = 2;
 
         public static Chessman.Colours AIColour { get => aiColour; set => aiColour = value; }
 
@@ -644,10 +646,87 @@ public static class Chess
         {
             AIColour = Chess.AIColour;
 
+            Evaluate = EvaluateByMaterial;
             //TODO: multiple types of move selection.
-            SelectMove = SelectRandomMove;
+            //SelectMove = SelectRandomMove;
+            SelectMove = SelectMoveMinimax;
+
         }
 
+        /// <summary>
+        /// The board evaluation function by material.
+        /// </summary>
+        /// <param name="board">The board state to evaluate.</param>
+        /// <param name="WhiteToMove">Is it white to move?</param>
+        /// <returns></returns>
+        public static int EvaluateByMaterial(in IComputableChessman[,] board, bool WhiteToMove)
+        {
+            int whiteMaterial = 0;
+            int blackMaterial = 0;
+            int playerMult = WhiteToMove ? 1 : -1;
+
+            foreach (IComputableChessman chessman in board)
+            {
+                if (chessman != null)
+                {
+                    if (chessman.Colour == Chessman.Colours.White)
+                    {
+                        whiteMaterial += PieceValueOf(chessman);
+                    }
+                    else
+                    {
+                        blackMaterial += PieceValueOf(chessman);
+                    }
+                }
+            }
+
+            int boardEvaluation = whiteMaterial - blackMaterial;
+
+            return boardEvaluation * playerMult;
+        }
+
+        /// <summary>
+        /// Detects if the board in question should result in a game over.
+        /// </summary>
+        /// <param name="board">Board to evaluate.</param>
+        /// <returns>True if the game is over, false if not.</returns>
+        private static bool GameOverIn(IComputableChessman[,] board)
+        {
+            List<IComputableChessman> whiteArmy = new List<IComputableChessman>();
+            List<IComputableChessman> blackArmy = new List<IComputableChessman>();
+            List<IComputableChessman> targetArmy;
+
+            //index the chessmen
+            foreach (IComputableChessman ICChessman in board)
+            {
+                if (ICChessman != null)
+                {
+                    targetArmy = ICChessman.Colour == Chessman.Colours.White ? whiteArmy : blackArmy;
+                    targetArmy.Add(ICChessman);
+                }
+            }
+
+            //retrieve king count using LINQ expressions
+            var whiteKingsQuery =
+                from IComputableChessman chessman in whiteArmy
+                where chessman.Type is Chessman.Types.King
+                select chessman;
+            var blackKingsQuery =
+                from IComputableChessman chessman in blackArmy
+                where chessman.Type is Chessman.Types.King
+                select chessman;
+
+            if(whiteKingsQuery.Any() || blackKingsQuery.Any())
+            {
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Selects a random (pseudo)legal move based on the current board state.
+        /// </summary>
+        /// <returns>The move to play.</returns>
         public static Move SelectRandomMove()
         {
             List<Move> allMoves = Chess.IndexPossibleMoves(AIColour);
@@ -655,6 +734,10 @@ public static class Chess
             return allMoves[randMove];
         }
 
+        /// <summary>
+        /// Selects a random (pseudo)legal move based on the given board state.
+        /// </summary>
+        /// <returns>The move to play.</returns>
         public static Move SelectRandomMove(IComputableChessman[,] board)
         {
 
@@ -664,9 +747,169 @@ public static class Chess
             return allMoves[randMove];
         }
 
+        /// <summary>
+        /// AI move invocation method. This will change the master board state.
+        /// </summary>
+        /// <param name="m">Move to play.</param>
         public static void AIPlayMove(Move m)
         {
             Chess.Play(m);
+        }
+
+        /*
+        public static Move SelectMiniMaxMove(IComputableChessman[,] board, int depth)
+        {
+            Priority_Queue.SimplePriorityQueue<Move> moveHeap = HeapifyMovesMinimax(board, depth);
+            return moveHeap.First();
+        }
+        */
+
+        public static Move SelectMoveMinimax(IComputableChessman[,] board)
+        {
+            //Priority_Queue.SimplePriorityQueue<Move> m_Heap = new SimplePriorityQueue<Move>();
+            //IComputableChessman[,] originalBoard = (IComputableChessman[,])board.Clone();
+            
+            List<Move> myMoves = Chess.IndexPossibleMoves(board, AIColour);
+            int perspectiveMult = AIColour == Chessman.Colours.White ? 1 : -1;
+            bool enemyMaxing = AIColour != Chessman.Colours.White;
+
+            int bestSoFar = perspectiveMult * Int32.MaxValue;
+            Move AIBestMove = myMoves[0];
+            int evaluation;
+            Move currentEval;
+            IComputableChessman[,] currentBoard;
+            for (int i = 0; i < myMoves.Count(); i++)
+            {
+                currentEval = myMoves[i];
+                currentBoard = (IComputableChessman[,])board.Clone();
+                Chess.Play(currentEval, (DummyChessman[,])currentBoard);
+                //search for opponent's worst move
+                evaluation = perspectiveMult * MiniMax(currentBoard, AISearchDepth - 1, Int32.MinValue, Int32.MaxValue, enemyMaxing);
+                if(evaluation < bestSoFar)
+                {
+                    bestSoFar = evaluation;
+                    AIBestMove = currentEval;
+                    //m_Heap.Enqueue(currentEval, evaluation);
+                }
+            }
+            return AIBestMove;
+        }
+
+        /// <summary>
+        /// Function: MiniMax
+        /// <para>
+        ///     This function implements the MiniMax algorithm for finite zero-sum games.
+        /// </para>
+        /// 
+        /// Alpha-Beta pruning is used to improve this function's efficiency.
+        /// In this implementation, White is the maximizing player and Black is the minimizing player.
+        ///
+        /// <para>
+        /// This method is to be called with the following form:
+        /// <code>
+        ///     MiniMax((IComputableChessman[,])BoardMatrix.Clone(), depth, Int32.MinValue, Int32.Maxvalue, AIColour == Chessman.Colours.White)
+        /// </code>
+        /// </para>
+        /// 
+        /// </summary>
+        /// <param name="board">The board to evaluate. This represents the current node in the game tree.</param>
+        /// <param name="depth">To what height should the game tree be "constructed?"</param>
+        /// <param name="maxing">Is this the maximizing player or the minimizing player?</param>
+        /// <returns></returns>
+        internal static int MiniMax(IComputableChessman[,] board, int depth, int alpha, int beta, bool maxing)
+        {
+            //declare player perspective
+            Chessman.Colours player = maxing ? Chessman.Colours.White : Chessman.Colours.Black;
+            IComputableChessman[,] originalBoard = (IComputableChessman[,])board.Clone();
+
+            //if we're at the end of the game tree, or the current board represents a game over,
+            //return a evaluation of the current position
+            if (depth == 0 || GameOverIn(board))
+            {
+                return Evaluate(board, maxing);
+            }
+
+            //index possible moves on the current board
+            List<Move> allMoves = Chess.IndexPossibleMoves(board, player);
+
+            int evaluation;
+            IComputableChessman[,] evaluating;
+
+            //MiniMax!
+            if (maxing)
+            {
+                int maxEval = Int32.MinValue; //initialize the maximum evaluation to "-infinity"
+                foreach (Move move in allMoves) //start game tree search
+                {
+                    //restore original board state at each step of horizontal linear scan
+                    evaluating = (IComputableChessman[,])originalBoard.Clone();
+                    FixInternalCoordinates((DummyChessman[,])evaluating);
+
+                    //attempt the evaluating move
+                    evaluating = Chess.Play(move, (DummyChessman[,])evaluating);
+
+                    //recursive call until depth is reached, passing the evaluation up the call stack
+                    //the next level of the game tree represents the choices of the other player, so pass in false for maxing.
+                    evaluation = MiniMax(evaluating, depth - 1, alpha, beta, false);
+
+                    //the maximizing player must keep track of the evaluation for the best move so far
+                    maxEval = Mathf.Max(maxEval, evaluation);
+                    //update alpha to equal the best move so far if it's lesser
+                    alpha = Mathf.Max(alpha, evaluation);
+
+                    //if beta is less than alpha, then the minimizing player discovered a better option already,
+                    //and will avoid getting into this position. stop the evaluation.
+                    if(beta <= alpha)
+                    {
+                        break;
+                    }
+                }
+                return maxEval;
+            } 
+            else
+            {
+                int minEval = Int32.MaxValue; //initialize the minimum evaluation to "infinity"
+                foreach (Move move in allMoves) //attempt all moves
+                {
+                    //restore original board state at each step of horizontal linear scan
+                    evaluating = (IComputableChessman[,])originalBoard.Clone();
+                    FixInternalCoordinates((DummyChessman[,])evaluating);
+
+                    //attempt the evaluating move
+                    evaluating = Chess.Play(move, (DummyChessman[,])evaluating);
+
+                    //recursive call until depth is reached, passing the evaluation up the call stack
+                    //the next level of the game tree represents the choices of the other player, so pass in true for maxing.
+                    evaluation = MiniMax(evaluating, depth - 1, alpha, beta, true);
+
+                    //the minimizing player must keep track of the evaluation for the least-evaluated move so far
+                    minEval = Mathf.Min(minEval, evaluation);
+                    //update alpha to equal the best move so far if it's greater
+                    beta = Mathf.Min(beta, evaluation);
+
+                    //if beta is less than alpha, then the minimizing player discovered a better option already. stop the evaluation.
+                    if (beta <= alpha)
+                    {
+                        break;
+                    }
+                }
+                return minEval;
+            }
+        }
+
+        /// <summary>
+        /// Fixes the internal coordinates of a chessboard.
+        /// </summary>
+        /// <param name="evaluating"></param>
+        private static void FixInternalCoordinates(DummyChessman[,] board)
+        {
+            for(int i = 0; i < Chess.BoardXYMax; i++)
+            {
+                for(int j = 0; i < Chess.BoardXYMax; i++)
+                {
+                    board[i, j].BoardCoords = new Vector2Int(i, j);
+                }
+            }
         }
     }
 

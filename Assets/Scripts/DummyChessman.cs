@@ -16,11 +16,12 @@ public class DummyChessman : IComputableChessman
     public bool HasMoved { get => hasMoved; set => hasMoved = value; }
 
 
-    public DummyChessman(Chessman.Colours theColour, Chessman.Types theType, Vector2Int coords)
+    public DummyChessman(Chessman.Colours theColour, Chessman.Types theType, Vector2Int coords, bool moved)
     {
         colour = theColour;
         type = theType;
         boardPos = coords;
+        hasMoved = moved;
     }
 
     public Chessman.Colours Colour { 
@@ -222,7 +223,7 @@ public class DummyChessman : IComputableChessman
                 && boardMatrix[x, y] == null
                 && !HasMoved)
             {
-                IndexMove(x, y, ref myMoves, boardMatrix, false);
+                IndexMove(x, bonusY, ref myMoves, boardMatrix, false);
             }
 
             //capture case:

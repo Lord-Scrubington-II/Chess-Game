@@ -9,7 +9,7 @@ public class DummyChessman : IComputableChessman
 {
     private Chessman.Colours colour;
     private Chessman.Types type;
-    private Vector2Int boardPos;
+    private Vector2Int boardPos; //TODO: The Dummy might not need these. Try passing coordinates to the move generation funcs instead. We can thus avoid slow deep cloning
     private bool hasMoved;
     public int File { get => boardPos.x; set => boardPos.x = value; }
     public int Rank { get => boardPos.y; set => boardPos.y = value; }
@@ -18,6 +18,7 @@ public class DummyChessman : IComputableChessman
 
     public DummyChessman(Chessman.Colours theColour, Chessman.Types theType, Vector2Int coords, bool moved)
     {
+    
         colour = theColour;
         type = theType;
         boardPos = coords;
@@ -31,12 +32,17 @@ public class DummyChessman : IComputableChessman
 
     public Chessman.Types Type { 
         get => type; 
-        private set => type = value; 
+        internal set => type = value; 
     }
 
     public Vector2Int BoardCoords { 
         get => boardPos; 
-        set => boardPos = value; 
+        internal set => boardPos = value; 
+    }
+
+    public DummyChessman ChessmanClone()
+    {
+        return (DummyChessman)this.MemberwiseClone();
     }
 
     /// <summary>
@@ -241,7 +247,7 @@ public class DummyChessman : IComputableChessman
                     //if the spot is valid, has a piece, and contains an enemy, place attack plate
                     if ((target != null) && (target.Colour != Colour))
                     {
-                        IndexMove(x, y, ref myMoves, boardMatrix, false);
+                        IndexMove(realX, y, ref myMoves, boardMatrix, false);
                     }
                 }
                 //switch to left

@@ -899,7 +899,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
                     //if the spot is valid, has a piece, and contains an enemy, place attack plate
                     if ((target != null) && (target.GetComponent<Chessman>().Colour != Colour))
                     {
-                        IndexMove(x, y, ref myMoves, false);
+                        IndexMove(realX, y, ref myMoves, false);
                     }
                 }
                 //switch to left

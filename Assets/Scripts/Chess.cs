@@ -341,7 +341,7 @@ public static class Chess
     /// <returns>The value of the chessman.</returns>
     public static int PieceValueOf(IComputableChessman chessman)
     {
-        return Chess.PieceValues[(int)chessman.Type];
+        return Chess.PieceValues[(int)(chessman.Type)];
     }
 
     /// <summary>
@@ -686,7 +686,7 @@ public static class Chess
         {
             int whiteMaterial = 0;
             int blackMaterial = 0;
-            //int playerMult = WhiteToMove ? 1 : -1;
+            int playerMult = WhiteToMove ? 1 : -1;
 
             foreach (IComputableChessman chessman in board)
             {
@@ -705,7 +705,7 @@ public static class Chess
 
             int boardEvaluation = whiteMaterial - blackMaterial;
 
-            return boardEvaluation;
+            return boardEvaluation * playerMult;
         }
 
         /// <summary>
@@ -713,7 +713,7 @@ public static class Chess
         /// </summary>
         /// <param name="board">Board to evaluate.</param>
         /// <returns>True if the game is over, false if not.</returns>
-        private static bool GameOverIn(IComputableChessman[,] board)
+        private static bool GameOverIn(in IComputableChessman[,] board)
         {
             List<IComputableChessman> whiteArmy = new List<IComputableChessman>();
             List<IComputableChessman> blackArmy = new List<IComputableChessman>();
@@ -818,12 +818,12 @@ public static class Chess
                 evaluation = MiniMax((DummyChessman[,])currentBoard, AISearchDepth, Int32.MinValue, Int32.MaxValue, true);
 
 
-                if(evaluation < bestSoFar)
+                if(evaluation <= bestSoFar)
                 {
                     bestSoFar = evaluation;
                     AIBestMove = currentEval;
                     //m_Heap.Enqueue(currentEval, evaluation);
-                    MaintainBestMoves(AIBestMove, bestMoves, evaluation, AIModule.TrackingMoveCount);
+                    //MaintainBestMoves(AIBestMove, bestMoves, evaluation, AIModule.TrackingMoveCount);
                 }
             }
             //AIBestMove = bestMoves.ElementAt(UnityEngine.Random.Range(0, bestMoves.Count())).Key;
@@ -950,7 +950,7 @@ public static class Chess
                     //update alpha to equal the best move so far if it's greater
                     beta = Mathf.Min(beta, evaluation);
 
-                    //if beta is less than alpha, then the minimizing player discovered a better option already. stop the evaluation.
+                    //if beta is less than alpha, then the maximizing player discovered a better option already. stop the evaluation.
                     if (beta <= alpha)
                     {
                         break;

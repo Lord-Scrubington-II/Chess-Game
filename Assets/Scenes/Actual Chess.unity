@@ -3979,21 +3979,41 @@ PrefabInstance:
       propertyPath: m_Text
       value: Welcome to Actual Chess.
       objectReference: {fileID: 0}
+    - target: {fileID: 7956252185968610538, guid: 6702821437238ee4f802f13d280ae721,
+        type: 3}
+      propertyPath: m_FontData.m_FontSize
+      value: 34
+      objectReference: {fileID: 0}
     - target: {fileID: 7956252185968610539, guid: 6702821437238ee4f802f13d280ae721,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0.057083
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7956252185968610539, guid: 6702821437238ee4f802f13d280ae721,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -108.85
+      value: -108.850006
+      objectReference: {fileID: 0}
+    - target: {fileID: 7956252185968610539, guid: 6702821437238ee4f802f13d280ae721,
+        type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 202.24051
       objectReference: {fileID: 0}
     - target: {fileID: 7956252186131143474, guid: 6702821437238ee4f802f13d280ae721,
         type: 3}
       propertyPath: m_Text
       value: In the future this will not be so easy to find. But for now, please
         take your time and enjoy. (*^_^*)/
+      objectReference: {fileID: 0}
+    - target: {fileID: 7956252186131143475, guid: 6702821437238ee4f802f13d280ae721,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7956252186131143475, guid: 6702821437238ee4f802f13d280ae721,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 76
       objectReference: {fileID: 0}
     - target: {fileID: 7956252186616393057, guid: 6702821437238ee4f802f13d280ae721,
         type: 3}

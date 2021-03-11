@@ -30,7 +30,7 @@ public class GameWrapper : MonoBehaviour
     public IEnumerator InvokeAI()
     {
         Chessman.ControlsFrozen = true;
-        yield return new WaitForSeconds(Chess.AIModule.thinkDelay / 4);
+        yield return new WaitForSeconds(0.05f);
         Chess.AIModule.AIThink();
     }
 }

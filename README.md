@@ -8,7 +8,7 @@ The game is populated by a (soon-to-be) large selection of "levels," which consi
 
 Would it be more appropriate to call it bad chess? Perhaps, and perhaps not. If one looks closely enough, one may be greeted by a familiar sight.
 
-Future planned features include an AI player, a settings menu, additional *bad chess* levels, a **very special** level, and more.
+Future planned features include a settings menu, additional *bad chess* levels, a **very special** level, and more.
 
 ![LevelSample1](https://github.com/Lord-Scrubington-II/Chess-Game/blob/main/LevelSample2.png)
 ![LevelSample3](https://github.com/Lord-Scrubington-II/Chess-Game/blob/main/LevelSample3.png)

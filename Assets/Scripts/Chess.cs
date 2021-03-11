@@ -9,6 +9,8 @@ using UnityEngine.SceneManagement;
 
 /// <summary>
 /// This static class implements the chess engine behind Bad Chess.
+/// TODO: Move selection needs to avoid making slow deep copies. AIThink needs to be invoked after human player's piece settles in.
+/// Finish writing the MoveHeap so that move ties can be broken with random moves.
 /// </summary>
 public static class Chess
 {
@@ -21,6 +23,7 @@ public static class Chess
     //mutable game information
     private static Chessman.Colours toMove = Chessman.Colours.White;
     private static bool gameOver = false;
+    public static int turnCount = 0;
 
     //static settings
     private static bool usingAI = true;
@@ -42,7 +45,8 @@ public static class Chess
     public static readonly bool ignoreTurns = false;
 
     internal static AudioSwitch moveSounds;
-    
+    internal static GameWrapper AIHandler; //this is not particularly good architecture, but it will work for now.
+
     //static constructor. It gets called on first reference to static class.
     static Chess()
     {
@@ -54,6 +58,7 @@ public static class Chess
         */
         //RefreshBoard();
         moveSounds = GameObject.Find("Board").GetComponent<AudioSwitch>();
+        AIHandler = GameObject.Find("Game Controller").GetComponent<GameWrapper>();
         toMove = Chessman.Colours.White;
         GameOver = false;
     }
@@ -70,35 +75,16 @@ public static class Chess
     public static Chessman.Colours AIColour { get => aiColour; internal set => aiColour = value; }
 
     /// <summary>
-    /// Swaps the turn state. Also handles the AI's turn if the AI is playing.
+    /// Swaps the turn state. Also gives the AI its turn.
     /// </summary>
     internal static void NextTurn()
     {
         PlayerToMove = PlayerToMove == Chessman.Colours.Black ? Chessman.Colours.White : Chessman.Colours.Black;
-    }
+        turnCount++;
 
-    private static void InvokeAI()
-    {
-        if (PlayerToMove == AIColour && ArmyOf(AIColour).Count > 0 && !GameOver)
+        if (UsingAI) //The AI Moves.
         {
-
-            Move toPlay = AIModule.SelectMove(reducedBoardMatrix);
-            if (usingAnims)
-            {
-                /**
-                 * Why is this necessary? This is because coroutines cannot be directly invoked
-                 * from a static class. This should simulate the act of clicking on and
-                 * moving a piece well enough. If I even did it right, that is...
-                 */
-
-                //retrieve reference to moving piece
-                GameObject AIPieceToMove = PieceAtPosition(toPlay.StartSquare.x, toPlay.StartSquare.y);
-                Chessman AIChessmanToMove = AIPieceToMove.GetComponent<Chessman>();
-
-                //invoke coroutine from the chessman that is to move.
-                AIChessmanToMove.StartCoroutine(nameof(AIChessmanToMove.AIPlayMoveCoroutine), toPlay);
-            }
-            else { AIModule.AIPlayMove(toPlay); } // no anims invocation
+            AIHandler.StartCoroutine(nameof(AIHandler.InvokeAI));
         }
     }
 
@@ -217,7 +203,7 @@ public static class Chess
         toMove = Chessman.Colours.White;
         GameOver = false;
         Chessman.ControlsFrozen = UsingAI && AIColour == Chessman.Colours.White ? true : false;
-        moveSounds = GameObject.Find("Board").GetComponent<AudioSwitch>();
+        //moveSounds = GameObject.Find("Board").GetComponent<AudioSwitch>();
     }
 
     /// <summary>
@@ -311,13 +297,6 @@ public static class Chess
         moveSounds.PlayChessmanSound(true);
         DestroyMovePlates();
         NextTurn();
-
-        if (UsingAI) //The AI Moves.
-        {
-            Chessman.ControlsFrozen = true;
-            InvokeAI();
-            Chessman.ControlsFrozen = false;
-        }
 
         DummyChessman[,] newBoard = (DummyChessman[,])(reducedBoardMatrix.Clone());
 
@@ -680,9 +659,11 @@ public static class Chess
         private static Chessman.Colours aiColour;
         public static MoveSelectionFunction SelectMove;
         private static EvaluationFunction Evaluate;
-        internal static int AISearchDepth = 3;
+        internal static int AISearchDepth = 2;
+        private static int trackingMoveCount = 3;
 
         public static Chessman.Colours AIColour { get => aiColour; set => aiColour = value; }
+        public static int TrackingMoveCount { get => trackingMoveCount; set => trackingMoveCount = value; }
 
         static AIModule()
         {
@@ -817,6 +798,8 @@ public static class Chess
             int bestSoFar = Int32.MaxValue;
             Move AIBestMove = myMoves[0];
 
+            Dictionary<Move, int> bestMoves = new Dictionary<Move, int>(AIModule.TrackingMoveCount);
+
             int evaluation;
             Move currentEval;
             IComputableChessman[,] currentBoard;
@@ -840,9 +823,39 @@ public static class Chess
                     bestSoFar = evaluation;
                     AIBestMove = currentEval;
                     //m_Heap.Enqueue(currentEval, evaluation);
+                    MaintainBestMoves(AIBestMove, bestMoves, evaluation, AIModule.TrackingMoveCount);
                 }
             }
+            //AIBestMove = bestMoves.ElementAt(UnityEngine.Random.Range(0, bestMoves.Count())).Key;
             return AIBestMove;
+        }
+
+        private static void MaintainBestMoves(Move AIBestMove, Dictionary<Move, int> bestMoves, int value, int toKeep)
+        {
+            if (bestMoves.Count() <= toKeep)
+            {
+                bestMoves.Add(AIBestMove, value);
+            } 
+            else
+            {
+                Move worstSoFar = AIBestMove;
+                int worstValue = value;
+                //var theMoves = bestMoves.Keys;
+                foreach(var moveWithValue in bestMoves)
+                {
+                    if(moveWithValue.Value > worstValue)
+                    {
+                        worstSoFar = moveWithValue.Key;
+                        worstValue = moveWithValue.Value;
+                    }
+                }
+                if(!worstSoFar.Equals(AIBestMove))
+                {
+                    bestMoves.Remove(worstSoFar);
+                    bestMoves.Add(AIBestMove, value);
+                }
+                //bestMoves.Add(AIBestMove, value);
+            }
         }
 
         /// <summary>
@@ -957,9 +970,35 @@ public static class Chess
             {
                 for(int j = 0; j < Chess.BoardXYMax; j++)
                 {
-                    board[i, j].BoardCoords = new Vector2Int(i, j);
+                    if(board[i, j] != null) board[i, j].BoardCoords = new Vector2Int(i, j);
                 }
             }
+        }
+
+        internal static void AIThink()
+        {
+            if (PlayerToMove == AIColour && ArmyOf(AIColour).Count > 0 && !GameOver)
+            {
+
+                Move toPlay = AIModule.SelectMove(reducedBoardMatrix);
+                if (usingAnims)
+                {
+                    /**
+                     * Why is this necessary? This is because coroutines cannot be directly invoked
+                     * from a static class. This should simulate the act of clicking on and
+                     * moving a piece well enough. If I even did it right, that is...
+                     */
+
+                    //retrieve reference to moving piece
+                    GameObject AIPieceToMove = PieceAtPosition(toPlay.StartSquare.x, toPlay.StartSquare.y);
+                    Chessman AIChessmanToMove = AIPieceToMove.GetComponent<Chessman>();
+
+                    //invoke coroutine from the chessman that is to move.
+                    AIChessmanToMove.StartCoroutine(nameof(AIChessmanToMove.AIPlayMoveCoroutine), toPlay);
+                }
+                else { AIModule.AIPlayMove(toPlay); } // no anims invocation
+            }
+            Chessman.ControlsFrozen = false;
         }
     }
 

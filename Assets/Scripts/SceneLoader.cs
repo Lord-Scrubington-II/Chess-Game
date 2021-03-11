@@ -14,21 +14,25 @@ public class SceneLoader : MonoBehaviour
 
     public void SelectLevel(string levelName)
     {
+        Chess.ResetGame();
         SceneManager.LoadScene(levelName);
     }
 
     public void ReturnToTitle()
     {
+        //Chess.ResetGame();
         SceneManager.LoadScene(titleIndex);
     }
 
     public void ReturnToMenu()
     {
+        Chess.ResetGame();
         SceneManager.LoadScene(menuIndex);
     }
 
     public void PlayActualChess()
     {
+        Chess.ResetGame();
         SceneManager.LoadScene("Actual Chess");
     }
 

@@ -15,6 +15,8 @@ public struct Move
     private Vector2Int targetSquare;
     private bool isCastle;
 
+    public static readonly Move Empty = new Move(new Vector2Int(-1, -1), new Vector2Int(-1, -1), null, false);
+
     public Vector2Int StartSquare { get => startSquare; private set => startSquare = value; }
     public Vector2Int TargetSquare { get => targetSquare; private set => targetSquare = value; }
     public DummyChessman MovingChessman { get => movingChessman; private set => movingChessman = value; }
@@ -93,6 +95,31 @@ public struct Move
 
     public bool isGreaterThan(Move m)
     {
+        return false;
+    }
+
+    public bool isEmpty()
+    {
+        if(this.movingChessman == Empty.movingChessman
+            && this.targetingChessman == Empty.targetingChessman
+            && this.startSquare == Empty.startSquare
+            && this.targetSquare == Empty.targetSquare)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    public override bool Equals(object m)
+    {
+        if(m.GetType() != typeof(Move))
+        {
+            return false;
+        }
+        if(this.startSquare == ((Move)m).startSquare && this.targetSquare == ((Move)m).targetSquare)
+        {
+            return true;
+        }
         return false;
     }
 

@@ -11,6 +11,8 @@ public class GameWrapper : MonoBehaviour
     void Awake()
     {
         Chess.ResetGame();
+        Chess.moveSounds = GameObject.Find("Board").GetComponent<AudioSwitch>();
+        Chess.AIHandler = this;
     }
 
     // Update is called once per frame
@@ -23,5 +25,12 @@ public class GameWrapper : MonoBehaviour
             //SceneManager.LoadScene("Actual Chess"); //TODO implement level loading
             Chess.MainMenuBack();
         }
+    }
+
+    public IEnumerator InvokeAI()
+    {
+        Chessman.ControlsFrozen = true;
+        yield return new WaitForSeconds(Chess.AIModule.thinkDelay / 4);
+        Chess.AIModule.AIThink();
     }
 }

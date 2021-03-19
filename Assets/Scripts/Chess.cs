@@ -40,6 +40,111 @@ public static class Chess
     public static readonly char[] BoardXAlias = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' }; //for standard chess coordinate notation
     public static readonly int[] PieceValues = { 990, 90, 50, 30, 30, 10 }; //These should correspond do the correct enum -> integer expansion in Chessman.Types
     
+    //This 2-d array of arrays 
+    public static readonly int[,][] PositionalOptimizationBoards =
+    {
+        {KingMiddleGameBoardOptimizationWhite, KingMiddleGameBoardOptimizationBlack},
+        {QueenBoardOptimizationBlack, QueenBoardOptimizationBlack},
+        {RookBoardOptimizationWhite, RookBoardOptimizationBlack},
+        {BishopBoardOptimizationWhite, BishopBoardOptimizationBlack},
+        {KnightBoardOptimizationWhite, BishopBoardOptimizationBlack},
+        {PawnBoardOptimizationWhite, PawnBoardOptimizationBlack},
+
+    };
+
+    private static readonly int[] PawnBoardOptimizationWhite =
+    {
+         0,  0,  0,  0,  0,  0,  0,  0,
+        50, 50, 50, 50, 50, 50, 50, 50,
+        10, 10, 20, 30, 30, 20, 10, 10,
+         5,  5, 10, 25, 25, 10,  5,  5,
+         0,  0,  0, 20, 20,  0,  0,  0,
+         5, -5,-10,  0,  0,-10, -5,  5,
+         5, 10, 10,-20,-20, 10, 10,  5,
+         0,  0,  0,  0,  0,  0,  0,  0
+    };
+
+    private static readonly int[] KnightBoardOptimizationWhite =
+    {
+         -50,-40,-30,-30,-30,-30,-40,-50,
+        -40,-20,  0,  0,  0,  0,-20,-40,
+        -30,  0, 10, 15, 15, 10,  0,-30,
+        -30,  5, 15, 20, 20, 15,  5,-30,
+        -30,  0, 15, 20, 20, 15,  0,-30,
+        -30,  5, 10, 15, 15, 10,  5,-30,
+        -40,-20,  0,  5,  5,  0,-20,-40,
+        -50,-40,-30,-30,-30,-30,-40,-50,
+    };
+
+    private static readonly int[] BishopBoardOptimizationWhite =
+    {
+        -20,-10,-10,-10,-10,-10,-10,-20,
+        -10,  0,  0,  0,  0,  0,  0,-10,
+        -10,  0,  5, 10, 10,  5,  0,-10,
+        -10,  5,  5, 10, 10,  5,  5,-10,
+        -10,  0, 10, 10, 10, 10,  0,-10,
+        -10, 10, 10, 10, 10, 10, 10,-10,
+        -10,  5,  0,  0,  0,  0,  5,-10,
+        -20,-10,-10,-10,-10,-10,-10,-20,
+    };
+
+    private static readonly int[] RookBoardOptimizationWhite =
+    {
+          0,  0,  0,  0,  0,  0,  0,  0,
+          5, 10, 10, 10, 10, 10, 10,  5,
+         -5,  0,  0,  0,  0,  0,  0, -5,
+         -5,  0,  0,  0,  0,  0,  0, -5,
+         -5,  0,  0,  0,  0,  0,  0, -5,
+         -5,  0,  0,  0,  0,  0,  0, -5,
+         -5,  0,  0,  0,  0,  0,  0, -5,
+          0,  0,  0,  5,  5,  0,  0,  0
+    };
+
+    private static readonly int[] QueenBoardOptimizationWhite =
+    {
+        -20,-10,-10, -5, -5,-10,-10,-20,
+        -10,  0,  0,  0,  0,  0,  0,-10,
+        -10,  0,  5,  5,  5,  5,  0,-10,
+         -5,  0,  5,  5,  5,  5,  0, -5,
+          0,  0,  5,  5,  5,  5,  0, -5,
+        -10,  5,  5,  5,  5,  5,  0,-10,
+        -10,  0,  5,  0,  0,  0,  0,-10,
+        -20,-10,-10, -5, -5,-10,-10,-20
+    };
+
+    private static readonly int[] KingMiddleGameBoardOptimizationWhite =
+    {
+        -30,-40,-40,-50,-50,-40,-40,-30,
+        -30,-40,-40,-50,-50,-40,-40,-30,
+        -30,-40,-40,-50,-50,-40,-40,-30,
+        -30,-40,-40,-50,-50,-40,-40,-30,
+        -20,-30,-30,-40,-40,-30,-30,-20,
+        -10,-20,-20,-20,-20,-20,-20,-10,
+         20, 20,  0,  0,  0,  0, 20, 20,
+         20, 30, 10,  0,  0, 10, 30, 20
+    };
+
+    private static readonly int[] KingEndGameBoardOptimizationWhite =
+    {
+        -50,-40,-30,-20,-20,-30,-40,-50,
+        -30,-20,-10,  0,  0,-10,-20,-30,
+        -30,-10, 20, 30, 30, 20,-10,-30,
+        -30,-10, 30, 40, 40, 30,-10,-30,
+        -30,-10, 30, 40, 40, 30,-10,-30,
+        -30,-10, 20, 30, 30, 20,-10,-30,
+        -30,-30,  0,  0,  0,  0,-30,-30,
+        -50,-30,-30,-30,-30,-30,-30,-50
+    };
+
+    //calculate these by 
+    private static readonly int[] PawnBoardOptimizationBlack;
+    private static readonly int[] KnightBoardOptimizationBlack;
+    private static readonly int[] BishopBoardOptimizationBlack;
+    private static readonly int[] RookBoardOptimizationBlack;
+    private static readonly int[] QueenBoardOptimizationBlack;
+    private static readonly int[] KingMiddleGameBoardOptimizationBlack;
+    private static readonly int[] KingEndGameBoardOptimizationBlack;
+
     //debug options
     public static readonly bool DEBUG = true;
     public static readonly bool ignoreTurns = false;
@@ -61,6 +166,12 @@ public static class Chess
         AIHandler = GameObject.Find("Game Controller").GetComponent<GameWrapper>();
         toMove = Chessman.Colours.White;
         GameOver = false;
+        //ConstructBlacksBoardOptimizationTablesFromWhites();
+    }
+
+    private static void ConstructBlacksBoardOptimizationTablesFromWhites()
+    {
+        throw new NotImplementedException();
     }
 
     public static GameObject[,] BoardMatrix { get => boardMatrix; private set => boardMatrix = value; }
@@ -705,7 +816,7 @@ public static class Chess
 
             int boardEvaluation = whiteMaterial - blackMaterial;
 
-            return boardEvaluation * playerMult;
+            return boardEvaluation;// * playerMult;
         }
 
         /// <summary>
@@ -789,16 +900,15 @@ public static class Chess
 
         public static Move SelectMoveMin(IComputableChessman[,] board)
         {
-            //Priority_Queue.SimplePriorityQueue<Move> m_Heap = new SimplePriorityQueue<Move>();
-            //IComputableChessman[,] originalBoard = (IComputableChessman[,])board.Clone();
+            //PriorityQueue<KeyValuePair<int, Move>> m_Heap = new PriorityQueue<KeyValuePair<int, Move>>();
+
+            List<KeyValuePair<int, Move>> orderedMoves = new List<KeyValuePair<int, Move>>();
             
             List<Move> myMoves = Chess.IndexPossibleMoves(board, AIColour);
             //int perspectiveMult = AIColour == Chessman.Colours.White ? 1 : -1;
 
-            int bestSoFar = Int32.MaxValue;
+            int bestEvaluation = Int32.MaxValue;
             Move AIBestMove = myMoves[0];
-
-            Dictionary<Move, int> bestMoves = new Dictionary<Move, int>(AIModule.TrackingMoveCount);
 
             int evaluation;
             Move currentEval;
@@ -816,46 +926,31 @@ public static class Chess
 
                 //search for opponent's best move
                 evaluation = MiniMax((DummyChessman[,])currentBoard, AISearchDepth, Int32.MinValue, Int32.MaxValue, true);
+                currentEval.Value = evaluation;
 
+                orderedMoves.Add(new KeyValuePair<int, Move>(evaluation, currentEval));
 
-                if(evaluation <= bestSoFar)
+                if(evaluation <= bestEvaluation)
                 {
-                    bestSoFar = evaluation;
+                    bestEvaluation = evaluation;
                     AIBestMove = currentEval;
                     //m_Heap.Enqueue(currentEval, evaluation);
-                    //MaintainBestMoves(AIBestMove, bestMoves, evaluation, AIModule.TrackingMoveCount);
                 }
             }
-            //AIBestMove = bestMoves.ElementAt(UnityEngine.Random.Range(0, bestMoves.Count())).Key;
+            
+            //select random move among ties
+            orderedMoves.Sort((x, y) => x.Key.CompareTo(y.Key));
+            List<Move> bestMoves = new List<Move>();
+            for(int i = 0; i < orderedMoves.Count(); i++)
+            {
+                if (orderedMoves[i].Key > bestEvaluation)
+                {
+                    break;
+                }
+                bestMoves.Add(orderedMoves[i].Value);
+            }
+            AIBestMove = bestMoves[UnityEngine.Random.Range(0, bestMoves.Count())];
             return AIBestMove;
-        }
-
-        private static void MaintainBestMoves(Move AIBestMove, Dictionary<Move, int> bestMoves, int value, int toKeep)
-        {
-            if (bestMoves.Count() <= toKeep)
-            {
-                bestMoves.Add(AIBestMove, value);
-            } 
-            else
-            {
-                Move worstSoFar = AIBestMove;
-                int worstValue = value;
-                //var theMoves = bestMoves.Keys;
-                foreach(var moveWithValue in bestMoves)
-                {
-                    if(moveWithValue.Value > worstValue)
-                    {
-                        worstSoFar = moveWithValue.Key;
-                        worstValue = moveWithValue.Value;
-                    }
-                }
-                if(!worstSoFar.Equals(AIBestMove))
-                {
-                    bestMoves.Remove(worstSoFar);
-                    bestMoves.Add(AIBestMove, value);
-                }
-                //bestMoves.Add(AIBestMove, value);
-            }
         }
 
         /// <summary>
@@ -889,7 +984,7 @@ public static class Chess
             //return a evaluation of the current position
             if (depth == 0 || GameOverIn(board))
             {
-                return Evaluate(board, maxing);
+                return Evaluate(board, AIColour == Chessman.Colours.White);
             }
 
             //index possible moves on the current board

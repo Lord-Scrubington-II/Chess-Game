@@ -6,7 +6,7 @@ using UnityEngine;
 /// Since this is an object that will be instantiated a lot, 
 /// it needs to be as high-performance and memory-efficient as possible.
 /// </summary>
-public struct Move
+public struct Move : IComparable
 {
     private DummyChessman movingChessman;
     private DummyChessman targetingChessman;
@@ -14,6 +14,7 @@ public struct Move
     private Vector2Int startSquare;
     private Vector2Int targetSquare;
     private bool isCastle;
+    private int value;
 
     public static readonly Move Empty = new Move(new Vector2Int(-1, -1), new Vector2Int(-1, -1), null, false);
 
@@ -22,6 +23,7 @@ public struct Move
     public DummyChessman MovingChessman { get => movingChessman; private set => movingChessman = value; }
     public DummyChessman TargetingChessman { get => targetingChessman; private set => targetingChessman = value; }
     public bool IsCastle { get => isCastle; private set => isCastle = value; }
+    public int Value { get => value; set => this.value = value; }
 
 
     /// <summary>
@@ -37,6 +39,7 @@ public struct Move
         startSquare = fromSquare;
         targetSquare = toSquare;
         isCastle = castle;
+        value = 0;
         if (board != null)
         {
             movingChessman = board[startSquare.x, startSquare.y];
@@ -60,7 +63,6 @@ public struct Move
             movingChessman = null;
             targetingChessman = null;
         }
-        //TODO: change target to the castling rook if is a castle.
     }
 
 
@@ -77,6 +79,7 @@ public struct Move
         startSquare = invoker.BoardCoords;
         targetSquare = toSquare;
         isCastle = castle;
+        value = 0;
 
         movingChessman = board[startSquare.x, startSquare.y];
         targetingChessman = board[targetSquare.x, targetSquare.y];
@@ -91,11 +94,6 @@ public struct Move
     {
         //return boardMatrixPreImage;
         throw new NotImplementedException();
-    }
-
-    public bool isGreaterThan(Move m)
-    {
-        return false;
     }
 
     public bool isEmpty()
@@ -123,6 +121,11 @@ public struct Move
         return false;
     }
 
+    public override int GetHashCode()
+    {
+        return base.GetHashCode();
+    }
+
     /// <summary>
     /// <c>ToString()</c> override for Moves.
     /// </summary>
@@ -138,5 +141,17 @@ public struct Move
 
         sRep += ".\n";
         return sRep;
+    }
+
+    public int CompareTo(object other)
+    {
+        if(other.GetType() == typeof(Move))
+        {
+            return Value.CompareTo(((Move)other).Value);
+        }
+        else
+        {
+            throw new InvalidCastException($"Type Move cannot be compared to type {other.GetType().Name}.");
+        }
     }
 }

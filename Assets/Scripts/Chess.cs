@@ -24,6 +24,7 @@ public static class Chess
     private static Chessman.Colours toMove = Chessman.Colours.White;
     private static bool gameOver = false;
     public static int turnCount = 0;
+    private static Stack<Move> mStack = new Stack<Move>();
 
     //static settings
     private static bool usingAI = true;
@@ -38,112 +39,119 @@ public static class Chess
 
     //aliases for useful data values.
     public static readonly char[] BoardXAlias = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' }; //for standard chess coordinate notation
-    public static readonly int[] PieceValues = { 990, 90, 50, 30, 30, 10 }; //These should correspond do the correct enum -> integer expansion in Chessman.Types
+    public static readonly int[] PieceValues = { 9900, 900, 500, 330, 320, 100 }; //These should correspond do the correct enum -> integer expansion in Chessman.Types
     
-    //This 2-d array of arrays 
-    public static readonly int[,][] PositionalOptimizationBoards =
+    //This 2-d array of arrays is to be indexed [PieceType, Colour] to retrieve the appropriate piece-square table.
+    public static readonly int[,][,] PositionalOptimizationBoards =
     {
-        {KingMiddleGameBoardOptimizationWhite, KingMiddleGameBoardOptimizationBlack},
-        {QueenBoardOptimizationBlack, QueenBoardOptimizationBlack},
-        {RookBoardOptimizationWhite, RookBoardOptimizationBlack},
-        {BishopBoardOptimizationWhite, BishopBoardOptimizationBlack},
-        {KnightBoardOptimizationWhite, BishopBoardOptimizationBlack},
-        {PawnBoardOptimizationWhite, PawnBoardOptimizationBlack},
-
+        {KingTableWhite, KingTableBlack},
+        {QueenTableWhite, QueenTableBlack},
+        {RookTableWhite, RookTableBlack},
+        {BishopTableWhite, BishopTableBlack},
+        {KnightTableWhite, KnightTableBlack},
+        {PawnTableWhite, PawnTableBlack},
     };
 
-    private static readonly int[] PawnBoardOptimizationWhite =
+    /**
+     * Careful! These look like they should be White's piece-square tables,
+     * but they are in fact Black's. This is because the piece-square tables
+     * are specifically to be indexed based on [Rank, File]. 
+     * The sub-arrays enumerated at the top are actually of lower index.
+     * This means (correctly) that, for example, black being on the 2nd rank 
+     * is equivalent to white being on the 7th rank.
+     */
+    private static readonly int[,] PawnTableBlack =
     {
-         0,  0,  0,  0,  0,  0,  0,  0,
-        50, 50, 50, 50, 50, 50, 50, 50,
-        10, 10, 20, 30, 30, 20, 10, 10,
-         5,  5, 10, 25, 25, 10,  5,  5,
-         0,  0,  0, 20, 20,  0,  0,  0,
-         5, -5,-10,  0,  0,-10, -5,  5,
-         5, 10, 10,-20,-20, 10, 10,  5,
-         0,  0,  0,  0,  0,  0,  0,  0
+         { 0,  0,  0,  0,  0,  0,  0,  0 },
+        { 50, 50, 50, 50, 50, 50, 50, 50 },
+        { 10, 10, 20, 30, 30, 20, 10, 10 },
+         { 5,  5, 10, 25, 25, 10,  5,  5 },
+         { 0,  0,  0, 20, 20,  0,  0,  0 },
+         { 5, -5,-10,  0,  0,-10, -5,  5 },
+         { 5, 10, 10,-20,-20, 10, 10,  5 },
+         { 0,  0,  0,  0,  0,  0,  0,  0 }
     };
 
-    private static readonly int[] KnightBoardOptimizationWhite =
+    private static readonly int[,] KnightTableBlack =
     {
-         -50,-40,-30,-30,-30,-30,-40,-50,
-        -40,-20,  0,  0,  0,  0,-20,-40,
-        -30,  0, 10, 15, 15, 10,  0,-30,
-        -30,  5, 15, 20, 20, 15,  5,-30,
-        -30,  0, 15, 20, 20, 15,  0,-30,
-        -30,  5, 10, 15, 15, 10,  5,-30,
-        -40,-20,  0,  5,  5,  0,-20,-40,
-        -50,-40,-30,-30,-30,-30,-40,-50,
+        { -50,-40,-30,-30,-30,-30,-40,-50 },
+        { -40,-20,  0,  0,  0,  0,-20,-40 },
+        { -30,  0, 10, 15, 15, 10,  0,-30 },
+        { -30,  5, 15, 20, 20, 15,  5,-30 },
+        { -30,  0, 15, 20, 20, 15,  0,-30 },
+        { -30,  5, 10, 15, 15, 10,  5,-30 },
+        { -40,-20,  0,  5,  5,  0,-20,-40 },
+        { -50,-40,-30,-30,-30,-30,-40,-50 },
     };
 
-    private static readonly int[] BishopBoardOptimizationWhite =
+    private static readonly int[,] BishopTableBlack =
     {
-        -20,-10,-10,-10,-10,-10,-10,-20,
-        -10,  0,  0,  0,  0,  0,  0,-10,
-        -10,  0,  5, 10, 10,  5,  0,-10,
-        -10,  5,  5, 10, 10,  5,  5,-10,
-        -10,  0, 10, 10, 10, 10,  0,-10,
-        -10, 10, 10, 10, 10, 10, 10,-10,
-        -10,  5,  0,  0,  0,  0,  5,-10,
-        -20,-10,-10,-10,-10,-10,-10,-20,
+        { -20,-10,-10,-10,-10,-10,-10,-20 },
+        { -10,  0,  0,  0,  0,  0,  0,-10 },
+        { -10,  0,  5, 10, 10,  5,  0,-10 },
+        { -10,  5,  5, 10, 10,  5,  5,-10 },
+        { -10,  0, 10, 10, 10, 10,  0,-10 },
+        { -10, 10, 10, 10, 10, 10, 10,-10 },
+        { -10,  5,  0,  0,  0,  0,  5,-10 },
+        { -20,-10,-10,-10,-10,-10,-10,-20 },
     };
 
-    private static readonly int[] RookBoardOptimizationWhite =
+    private static readonly int[,] RookTableBlack =
     {
-          0,  0,  0,  0,  0,  0,  0,  0,
-          5, 10, 10, 10, 10, 10, 10,  5,
-         -5,  0,  0,  0,  0,  0,  0, -5,
-         -5,  0,  0,  0,  0,  0,  0, -5,
-         -5,  0,  0,  0,  0,  0,  0, -5,
-         -5,  0,  0,  0,  0,  0,  0, -5,
-         -5,  0,  0,  0,  0,  0,  0, -5,
-          0,  0,  0,  5,  5,  0,  0,  0
+        { 0,  0,  0,  0,  0,  0,  0,  0 },
+        { 5, 10, 10, 10, 10, 10, 10,  5 },
+        { -5,  0,  0,  0,  0,  0,  0, -5 },
+        { -5,  0,  0,  0,  0,  0,  0, -5 },
+        { -5,  0,  0,  0,  0,  0,  0, -5 },
+        { -5,  0,  0,  0,  0,  0,  0, -5 },
+        { -5,  0,  0,  0,  0,  0,  0, -5 },
+        { 0,  0,  0,  5,  5,  0,  0, 0 }
     };
 
-    private static readonly int[] QueenBoardOptimizationWhite =
+    private static readonly int[,] QueenTableBlack =
     {
-        -20,-10,-10, -5, -5,-10,-10,-20,
-        -10,  0,  0,  0,  0,  0,  0,-10,
-        -10,  0,  5,  5,  5,  5,  0,-10,
-         -5,  0,  5,  5,  5,  5,  0, -5,
-          0,  0,  5,  5,  5,  5,  0, -5,
-        -10,  5,  5,  5,  5,  5,  0,-10,
-        -10,  0,  5,  0,  0,  0,  0,-10,
-        -20,-10,-10, -5, -5,-10,-10,-20
+        { -20,-10,-10, -5, -5,-10,-10,-20 },
+        { -10,  0,  0,  0,  0,  0,  0,-10 },
+        { -10,  0,  5,  5,  5,  5,  0,-10 },
+        { -5,   0,  5,  5,  5,  5,  0, -5 },
+        {  0,   0,  5,  5,  5,  5,  0, -5 },
+        { -10,  5,  5,  5,  5,  5,  0,-10 },
+        { -10,  0,  5,  0,  0,  0,  0,-10 },
+        { -20,-10,-10, -5, -5,-10,-10,-20 }
     };
 
-    private static readonly int[] KingMiddleGameBoardOptimizationWhite =
+    private static readonly int[,] KingTableBlack =
     {
-        -30,-40,-40,-50,-50,-40,-40,-30,
-        -30,-40,-40,-50,-50,-40,-40,-30,
-        -30,-40,-40,-50,-50,-40,-40,-30,
-        -30,-40,-40,-50,-50,-40,-40,-30,
-        -20,-30,-30,-40,-40,-30,-30,-20,
-        -10,-20,-20,-20,-20,-20,-20,-10,
-         20, 20,  0,  0,  0,  0, 20, 20,
-         20, 30, 10,  0,  0, 10, 30, 20
+        { -30,-40,-40,-50,-50,-40,-40,-30 },
+        { -30,-40,-40,-50,-50,-40,-40,-30 },
+        { -30,-40,-40,-50,-50,-40,-40,-30 },
+        { -30,-40,-40,-50,-50,-40,-40,-30 },
+        { -20,-30,-30,-40,-40,-30,-30,-20 },
+        { -10,-20,-20,-20,-20,-20,-20,-10 },
+        {  20, 20,  0,  0,  0,  0, 20, 20 },
+        {  20, 30, 10,  0,  0, 10, 30, 20 }
     };
 
-    private static readonly int[] KingEndGameBoardOptimizationWhite =
+    private static readonly int[,] KingEndgameTableBlack =
     {
-        -50,-40,-30,-20,-20,-30,-40,-50,
-        -30,-20,-10,  0,  0,-10,-20,-30,
-        -30,-10, 20, 30, 30, 20,-10,-30,
-        -30,-10, 30, 40, 40, 30,-10,-30,
-        -30,-10, 30, 40, 40, 30,-10,-30,
-        -30,-10, 20, 30, 30, 20,-10,-30,
-        -30,-30,  0,  0,  0,  0,-30,-30,
-        -50,-30,-30,-30,-30,-30,-30,-50
+        { -50,-40,-30,-20,-20,-30,-40,-50 },
+        { -30,-20,-10,  0,  0,-10,-20,-30 },
+        { -30,-10, 20, 30, 30, 20,-10,-30 },
+        { -30,-10, 30, 40, 40, 30,-10,-30 },
+        { -30,-10, 30, 40, 40, 30,-10,-30 },
+        { -30,-10, 20, 30, 30, 20,-10,-30 },
+        { -30,-30,  0,  0,  0,  0,-30,-30 },
+        { -50,-30,-30,-30,-30,-30,-30,-50 }
     };
 
-    //calculate these by 
-    private static readonly int[] PawnBoardOptimizationBlack;
-    private static readonly int[] KnightBoardOptimizationBlack;
-    private static readonly int[] BishopBoardOptimizationBlack;
-    private static readonly int[] RookBoardOptimizationBlack;
-    private static readonly int[] QueenBoardOptimizationBlack;
-    private static readonly int[] KingMiddleGameBoardOptimizationBlack;
-    private static readonly int[] KingEndGameBoardOptimizationBlack;
+    //calculate these by mirroring the black piece-square tables 
+    private static readonly int[,] PawnTableWhite = new int[8, 8];
+    private static readonly int[,] KnightTableWhite = new int[8, 8];
+    private static readonly int[,] BishopTableWhite = new int[8, 8];
+    private static readonly int[,] RookTableWhite = new int[8, 8];
+    private static readonly int[,] QueenTableWhite = new int[8, 8];
+    private static readonly int[,] KingTableWhite = new int[8, 8];
+    private static readonly int[,] KingEndgameTableWhite = new int[8, 8];
 
     //debug options
     public static readonly bool DEBUG = true;
@@ -166,12 +174,75 @@ public static class Chess
         AIHandler = GameObject.Find("Game Controller").GetComponent<GameWrapper>();
         toMove = Chessman.Colours.White;
         GameOver = false;
-        //ConstructBlacksBoardOptimizationTablesFromWhites();
+        ConstructPieceSquareTables();
     }
 
-    private static void ConstructBlacksBoardOptimizationTablesFromWhites()
+    private static void ConstructPieceSquareTables()
     {
-        throw new NotImplementedException();
+        int tableDimension = 8;
+
+        //construct pawn table
+        for(int i = 0; i < tableDimension; i++)
+        {
+            for(int j = 0; j < tableDimension; i++)
+            {
+                PawnTableWhite[i, j] = PawnTableBlack[tableDimension - i - 1, j];
+            }
+        }
+
+        //construct knight table
+        for (int i = 0; i < tableDimension; i++)
+        {
+            for (int j = 0; j < tableDimension; i++)
+            {
+                KnightTableWhite[i, j] = KnightTableBlack[tableDimension - i - 1, j];
+            }
+        }
+
+        //construct bishop table
+        for (int i = 0; i < tableDimension; i++)
+        {
+            for (int j = 0; j < tableDimension; i++)
+            {
+                BishopTableWhite[i, j] = BishopTableBlack[tableDimension - i - 1, j];
+            }
+        }
+
+        //construct rook table
+        for (int i = 0; i < tableDimension; i++)
+        {
+            for (int j = 0; j < tableDimension; i++)
+            {
+                RookTableWhite[i, j] = RookTableBlack[tableDimension - i - 1, j];
+            }
+        }
+
+        //construct queen table
+        for (int i = 0; i < tableDimension; i++)
+        {
+            for (int j = 0; j < tableDimension; i++)
+            {
+                QueenTableWhite[i, j] = QueenTableBlack[tableDimension - i - 1, j];
+            }
+        }
+
+        //construct king table
+        for (int i = 0; i < tableDimension; i++)
+        {
+            for (int j = 0; j < tableDimension; i++)
+            {
+                KingTableWhite[i, j] = KingTableBlack[tableDimension - i - 1, j];
+            }
+        }
+
+        //construct king endgame table
+        for (int i = 0; i < tableDimension; i++)
+        {
+            for (int j = 0; j < tableDimension; i++)
+            {
+                KingEndgameTableWhite[i, j] = KingEndgameTableBlack[tableDimension - i - 1, j];
+            }
+        }
     }
 
     public static GameObject[,] BoardMatrix { get => boardMatrix; private set => boardMatrix = value; }

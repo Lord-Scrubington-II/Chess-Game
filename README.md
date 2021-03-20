@@ -1,5 +1,5 @@
 # Chess-Game
-An unassuming chess game. (WIP)
+An unassuming chess game. Includes a (self-written) Chess AI. (WIP)
 
 ## Features
 This is a chess app built in Unity Game Engine, designed for Android and PC builds. However, it is not your average chess game. 

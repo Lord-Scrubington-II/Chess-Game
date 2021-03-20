@@ -12,15 +12,16 @@ using System;
 ///     while <c>LookTop()</c> and <c>Dequeue()</c> take <c>O(1)</c>.
 /// </para>
 /// </summary>
-/// <typeparam name="T">The type of elements to insert into the PriorityQueue.</typeparam>
+/// <typeparam name="T">The type of the elements which are to be inserted into this PriorityQueue.</typeparam>
 public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection<T> //where T : IComparable
 {
-    
+    // Backing heap information
     private T[] heap; // The priority queue is backed by a binary heap, which is an array of generics
     private int count; // How many elements are in the heap?
     private int capacity; // Maximum capacy of the heap
     private int masterIndex; // The next index to insert at
 
+    // static constants
     private static readonly int ROOT = 0;
     private static readonly int INVALID = -1;
     private static readonly int DefaultCapacity = 256;
@@ -46,6 +47,58 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
     /// </returns>
     public delegate bool CompareFunction(T first, T second);
     private CompareFunction PriorityCompare;
+
+    /// <summary>
+    /// Default comparison function for the PriorityQueue. 
+    /// The inserted type must implement IComparable. This will cause the PriorityQueue to use a backing MaxHeap.
+    /// </summary>
+    /// <param name="first">The first item.</param>
+    /// <param name="second">The second item.</param>
+    /// <returns>True if the first item is greater, false if not.</returns>
+    public static bool MaxHeapCompare(T first, T second)
+    {
+        if (first is IComparable && second is IComparable)
+        {
+            //if the first elem is greater
+            if (((IComparable)first).CompareTo((IComparable)second) > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+        else
+        {
+            throw new InvalidOperationException(
+                $"Unsupported comparison of non-comparable types {first.GetType().Name} and {second.GetType().Name}"
+            );
+        }
+    }
+
+    /// <summary>
+    /// Second default comparison function for the PriorityQueue. 
+    /// The inserted type must implement IComparable. This will cause the PriorityQueue to use a backing MinHeap.
+    /// </summary>
+    /// <param name="first">The first item.</param>
+    /// <param name="second">The second item.</</param>
+    /// <returns>True if the first item is lesser, false if not.</returns>
+    public static bool MinHeapCompare(T first, T second)
+    {
+        if (first is IComparable && second is IComparable)
+        {
+            //if the first elem is lesser
+            if (((IComparable)first).CompareTo((IComparable)second) < 0)
+            {
+                return true;
+            }
+            return false;
+        }
+        else
+        {
+            throw new InvalidOperationException(
+                $"Unsupported comparison of non-comparable types {first.GetType().Name} and {second.GetType().Name}"
+            );
+        }
+    }
 
     public T[] Heap { get => heap; private set => heap = value; }
     public int Count { get => count; }
@@ -174,6 +227,74 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
     }
 
     /// <summary>
+    /// Checks to see if a query element exists in the priority queue.
+    /// </summary>
+    /// <param name="query"></param>
+    /// <returns></returns>
+    public bool Contains(T query)
+    {
+        foreach(T elem in this)
+        {
+            if(elem.Equals(query))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Removes the element at the top of the heap and returns it through the <c>out</c> parameter.
+    /// </summary>
+    /// <param name="result">A pointer to an object of type T.</param>
+    /// <returns>false if the heap was empty, true otherwise.</returns>
+    public bool TryDequeue(out T result)
+    {
+        if (IsEmpty())
+        {
+            result = default(T);
+            return false;
+        }
+        else
+        {
+            //the index to remove from is the one behind the Master Index
+            int toRemove = masterIndex - 1;
+            result = ItemAt(ROOT);
+
+            //overwrite the root with the spot behind the next insertion target, recalibrate occupancy
+            Heap[ROOT] = ItemAt(toRemove);
+            Heap[toRemove] = default(T);
+            masterIndex--;
+            count--;
+
+            //restructure the heap
+            ReHeapDown();
+
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the element at the top of the heap without removing it. 
+    /// Returns the item through the <c>out</c> parameter.
+    /// </summary>
+    /// <param name="result">A pointer to an object of type T.</param>
+    /// <returns>false if the heap was empty, true otherwise.</returns>
+    public bool TryLookTop(out T result)
+    {
+        if (IsEmpty())
+        {
+            result = default(T);
+            return false;
+        }
+        else
+        {
+            result = Heap[ROOT];
+            return true;
+        }
+    }
+
+    /// <summary>
     /// This method sees if the heap is full by comparing occupancy to size.
     /// </summary>
     /// <returns>True if the heap is full, false otherwise.</returns>
@@ -190,7 +311,7 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
     /// This method sees if the heap is empty by checking its occupancy.
     /// </summary>
     /// <returns>True if the heap is empty, false otherwise.</returns>
-    private bool IsEmpty()
+    public bool IsEmpty()
     {
         if (Count == 0)
         {
@@ -372,61 +493,74 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
     }
 
     /// <summary>
-    /// Default comparison function for the PriorityQueue. 
-    /// The inserted type must implement IComparable. This will cause the PriorityQueue to use a backing MaxHeap.
+    /// Empties the PriorityQueue.
     /// </summary>
-    /// <param name="first">The first item.</param>
-    /// <param name="second">The second item.</param>
-    /// <returns>True if the first item is greater, false if not.</returns>
-    public static bool MaxHeapCompare(T first, T second)
-    {   
-        if(first is IComparable && second is IComparable)
-        {
-            //if the first elem is greater
-            if (((IComparable)first).CompareTo((IComparable)second) > 0)
-            {
-                return true;
-            }
-            return false;
-        }
-        else
-        {
-            throw new InvalidOperationException(
-                $"Unsupported comparison of non-comparable types {first.GetType().Name} and {second.GetType().Name}"
-            );
-        }
+    public void Clear()
+    {
+        masterIndex = 0;
+        count = 0;
+        Heap = new T[Heap.Length];
     }
 
-    /// <summary>
-    /// Second default comparison function for the PriorityQueue. 
-    /// The inserted type must implement IComparable. This will cause the PriorityQueue to use a backing MinHeap.
-    /// </summary>
-    /// <param name="first">The first item.</param>
-    /// <param name="second">The second item.</</param>
-    /// <returns>True if the first item is lesser, false if not.</returns>
-    public static bool MinHeapCompare(T first, T second)
+    public T[] ToArraySorted()
     {
-        if (first is IComparable && second is IComparable)
+        //the out-array holds the sorted heap representation
+        T[] outArray = new T[this.Count];
+        
+        //the search-queue stores an element's children to perform BFS
+        Queue<int> searchQueue = new Queue<int>(this.Count);
+        searchQueue.Enqueue(ROOT);
+
+        //Perform a Level-Ordered Traversal (i.e. BFS) of the heap and return a sorted array
+        int ind = 0;
+        while(searchQueue.Count > 0)
         {
-            //if the first elem is lesser
-            if (((IComparable)first).CompareTo((IComparable)second) < 0)
+            int currentEval = searchQueue.Dequeue();
+            outArray[ind] = ItemAt(currentEval);
+
+            //queue up the children if they exist
+            if(LeftIndexOf(currentEval) < this.Count)
             {
-                return true;
+                searchQueue.Enqueue(LeftIndexOf(currentEval));
+
+                if (RightIndexOf(currentEval) < this.Count)
+                {
+                    searchQueue.Enqueue(RightIndexOf(currentEval));
+                }
             }
-            return false;
+            ind++;
         }
-        else
-        {
-            throw new InvalidOperationException(
-                $"Unsupported comparison of non-comparable types {first.GetType().Name} and {second.GetType().Name}"
-            );
-        }
+
+        return outArray;
     }
 
-    public T[] ToSortedArray()
+    public T[] ToArray()
     {
-        //Perform a Level-Ordered Traversal of the heap and return a sorted array
-        throw new NotImplementedException();
+        return (T[])Heap.Clone();
+    }
+
+    public void CopyTo(Array array, int index)
+    {
+        Heap.CopyTo(array, index);
+    }
+    public IEnumerator<T> GetEnumerator()
+    {
+        return (IEnumerator<T>)Heap.GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return Heap.GetEnumerator();
+    }
+
+    public override int GetHashCode()
+    {
+        return Heap.GetHashCode();
+    }
+
+    public override bool Equals(object other)
+    {
+        return Heap.Equals(other);
     }
 
     /// <summary>
@@ -451,17 +585,32 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
         return theString;
     }
 
-    public void CopyTo(Array array, int index)
+    public static List<IComparable> HeapSort(ICollection<IComparable> toSort, bool usingMinHeap)
     {
-        Heap.CopyTo(array, index);
-    }
-    public IEnumerator<T> GetEnumerator()
-    {
-        return (IEnumerator<T>)heap.GetEnumerator();
-    }
+        //the out list stores the elements in sorted order
+        var outList = new List<IComparable>(toSort.Count);
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return heap.GetEnumerator();
+        //the inheap collects elements in sorted order
+        PriorityQueue<IComparable> inHeap;
+        if (usingMinHeap)
+        {
+            inHeap = new PriorityQueue<IComparable>(PriorityQueue<IComparable>.MinHeapCompare);
+        }
+        else
+        {
+            inHeap = new PriorityQueue<IComparable>(PriorityQueue<IComparable>.MaxHeapCompare);
+        }
+
+        //heapsort
+        foreach (IComparable elem in toSort)
+        {
+            inHeap.Enqueue(elem);
+        }
+        while (!inHeap.IsEmpty())
+        {
+            outList.Add(inHeap.Dequeue());
+        }
+
+        return outList;
     }
 }

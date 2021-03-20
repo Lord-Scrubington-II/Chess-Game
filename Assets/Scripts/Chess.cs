@@ -40,17 +40,9 @@ public static class Chess
     //aliases for useful data values.
     public static readonly char[] BoardXAlias = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' }; //for standard chess coordinate notation
     public static readonly int[] PieceValues = { 9900, 900, 500, 330, 320, 100 }; //These should correspond do the correct enum -> integer expansion in Chessman.Types
-    
+
     //This 2-d array of arrays is to be indexed [PieceType, Colour] to retrieve the appropriate piece-square table.
-    public static readonly int[,][,] PositionalOptimizationBoards =
-    {
-        {KingTableWhite, KingTableBlack},
-        {QueenTableWhite, QueenTableBlack},
-        {RookTableWhite, RookTableBlack},
-        {BishopTableWhite, BishopTableBlack},
-        {KnightTableWhite, KnightTableBlack},
-        {PawnTableWhite, PawnTableBlack},
-    };
+    public static readonly int[,][,] PieceSquareTables;
 
     /**
      * Careful! These look like they should be White's piece-square tables,
@@ -68,7 +60,7 @@ public static class Chess
          { 5,  5, 10, 25, 25, 10,  5,  5 },
          { 0,  0,  0, 20, 20,  0,  0,  0 },
          { 5, -5,-10,  0,  0,-10, -5,  5 },
-         { 5, 10, 10,-20,-20, 10, 10,  5 },
+         { 5, 10, 10,-35,-35, 10, 10,  5 },
          { 0,  0,  0,  0,  0,  0,  0,  0 }
     };
 
@@ -174,9 +166,21 @@ public static class Chess
         AIHandler = GameObject.Find("Game Controller").GetComponent<GameWrapper>();
         toMove = Chessman.Colours.White;
         GameOver = false;
+        PieceSquareTables = new int[,][,]
+        {
+            { KingTableWhite, KingTableBlack},
+            { QueenTableWhite, QueenTableBlack},
+            { RookTableWhite, RookTableBlack},
+            { BishopTableWhite, BishopTableBlack},
+            { KnightTableWhite, KnightTableBlack},
+            { PawnTableWhite, PawnTableBlack},
+        };
         ConstructPieceSquareTables();
     }
 
+    /// <summary>
+    /// Constructs the Piece-Square Tables for White from Black's Piece-Square Tables.
+    /// </summary>
     private static void ConstructPieceSquareTables()
     {
         int tableDimension = 8;
@@ -184,7 +188,7 @@ public static class Chess
         //construct pawn table
         for(int i = 0; i < tableDimension; i++)
         {
-            for(int j = 0; j < tableDimension; i++)
+            for(int j = 0; j < tableDimension; j++)
             {
                 PawnTableWhite[i, j] = PawnTableBlack[tableDimension - i - 1, j];
             }
@@ -193,7 +197,7 @@ public static class Chess
         //construct knight table
         for (int i = 0; i < tableDimension; i++)
         {
-            for (int j = 0; j < tableDimension; i++)
+            for (int j = 0; j < tableDimension; j++)
             {
                 KnightTableWhite[i, j] = KnightTableBlack[tableDimension - i - 1, j];
             }
@@ -202,7 +206,7 @@ public static class Chess
         //construct bishop table
         for (int i = 0; i < tableDimension; i++)
         {
-            for (int j = 0; j < tableDimension; i++)
+            for (int j = 0; j < tableDimension; j++)
             {
                 BishopTableWhite[i, j] = BishopTableBlack[tableDimension - i - 1, j];
             }
@@ -211,7 +215,7 @@ public static class Chess
         //construct rook table
         for (int i = 0; i < tableDimension; i++)
         {
-            for (int j = 0; j < tableDimension; i++)
+            for (int j = 0; j < tableDimension; j++)
             {
                 RookTableWhite[i, j] = RookTableBlack[tableDimension - i - 1, j];
             }
@@ -220,7 +224,7 @@ public static class Chess
         //construct queen table
         for (int i = 0; i < tableDimension; i++)
         {
-            for (int j = 0; j < tableDimension; i++)
+            for (int j = 0; j < tableDimension; j++)
             {
                 QueenTableWhite[i, j] = QueenTableBlack[tableDimension - i - 1, j];
             }
@@ -229,7 +233,7 @@ public static class Chess
         //construct king table
         for (int i = 0; i < tableDimension; i++)
         {
-            for (int j = 0; j < tableDimension; i++)
+            for (int j = 0; j < tableDimension; j++)
             {
                 KingTableWhite[i, j] = KingTableBlack[tableDimension - i - 1, j];
             }
@@ -238,7 +242,7 @@ public static class Chess
         //construct king endgame table
         for (int i = 0; i < tableDimension; i++)
         {
-            for (int j = 0; j < tableDimension; i++)
+            for (int j = 0; j < tableDimension; j++)
             {
                 KingEndgameTableWhite[i, j] = KingEndgameTableBlack[tableDimension - i - 1, j];
             }
@@ -851,7 +855,7 @@ public static class Chess
         {
             AIColour = Chess.AIColour;
 
-            Evaluate = EvaluateByMaterial;
+            Evaluate = EvaluateByPosition;
             //TODO: multiple types of move selection.
             //SelectMove = SelectRandomMove;
             SelectMove = SelectMoveMin;
@@ -863,7 +867,7 @@ public static class Chess
         /// </summary>
         /// <param name="board">The board state to evaluate.</param>
         /// <param name="WhiteToMove">Is it white to move?</param>
-        /// <returns></returns>
+        /// <returns>Evaluation as a signed integer</returns>
         public static int EvaluateByMaterial(in IComputableChessman[,] board, bool WhiteToMove)
         {
             int whiteMaterial = 0;
@@ -888,6 +892,48 @@ public static class Chess
             int boardEvaluation = whiteMaterial - blackMaterial;
 
             return boardEvaluation;// * playerMult;
+        }
+
+        /// <summary>
+        /// The board evaluation function by material and position.
+        /// </summary>
+        /// <param name="board">The board state to evaluate.</param>
+        /// <param name="WhiteToMove">Is it white to move?</param>
+        /// <returns>Evaluation as a signed integer.</returns>
+        public static int EvaluateByPosition(in IComputableChessman[,] board, bool WhiteToMove)
+        {
+            int whiteMaterial = 0;
+            int blackMaterial = 0;
+            int playerMult = WhiteToMove ? 1 : -1;
+
+            foreach (IComputableChessman chessman in board)
+            {
+                if (chessman != null)
+                {
+                    int[,] pieceSquareTable = GetPieceSquareTable(chessman);
+
+                    if (chessman.Colour == Chessman.Colours.White)
+                    {
+                        whiteMaterial += PieceValueOf(chessman);
+                        whiteMaterial += pieceSquareTable[chessman.Rank, chessman.File];
+                    }
+                    else
+                    {
+                        blackMaterial += PieceValueOf(chessman);
+                        blackMaterial += pieceSquareTable[chessman.Rank, chessman.File];
+                    }
+                }
+            }
+
+            int boardEvaluation = whiteMaterial - blackMaterial;
+            return boardEvaluation;// * playerMult;
+            
+        }
+
+        public static int[,] GetPieceSquareTable(IComputableChessman chessman)
+        {
+            var G = PieceSquareTables;
+            return PieceSquareTables[(int)chessman.Type, (int)chessman.Colour];
         }
 
         /// <summary>

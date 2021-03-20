@@ -106,7 +106,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     {
         if (this.Colour == Colours.Black)
         {
-            //this is incredibly dumb architecturally but it does mean that I don't have to use as many scripts.
+            //this is rather dumb architecturally but it does mean that I don't have to use as many scripts.
             switch (this.Type)
             {
                 case Types.King:

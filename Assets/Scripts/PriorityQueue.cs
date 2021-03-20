@@ -16,7 +16,14 @@ using System;
 public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection<T> //where T : IComparable
 {
     // Backing heap information
-    private T[] heap; // The priority queue is backed by a binary heap, which is an array of generics
+    /// <summary>
+    /// The priority queue is backed by a binary heap, which is an array of generics.
+    /// An item on the heap is in the correct spot if it is
+    /// of higher priority than its children
+    /// and
+    /// of lower priority than its parent.
+    /// </summary>
+    private T[] heap; 
     private int count; // How many elements are in the heap?
     private int capacity; // Maximum capacy of the heap
     private int masterIndex; // The next index to insert at
@@ -26,8 +33,9 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
     private static readonly int INVALID = -1;
     private static readonly int DefaultCapacity = 256;
 
+    public delegate bool CompareFunction(T first, T second);
     /// <summary>
-    /// Delegate: CompareFunction
+    /// Delegate: PriorityCompare (Type: CompareFunction)
     /// <para>
     ///     The priority queue contains a comparison delegate which compares the priorities of two of its elements.
     ///     This delegate can be provided through the constructor or it can be one of the following default implementations:
@@ -45,12 +53,12 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
     /// <returns>
     ///     <c>true</c> if the first item is of greater priority, and <c>false</c> otherwise.
     /// </returns>
-    public delegate bool CompareFunction(T first, T second);
     private CompareFunction PriorityCompare;
 
     /// <summary>
     /// Default comparison function for the PriorityQueue. 
     /// The inserted type must implement IComparable. This will cause the PriorityQueue to use a backing MaxHeap.
+    /// (Greater elements will have higher priority.)
     /// </summary>
     /// <param name="first">The first item.</param>
     /// <param name="second">The second item.</param>
@@ -77,9 +85,10 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
     /// <summary>
     /// Second default comparison function for the PriorityQueue. 
     /// The inserted type must implement IComparable. This will cause the PriorityQueue to use a backing MinHeap.
+    /// (Lesser elements will have higher priority.)
     /// </summary>
     /// <param name="first">The first item.</param>
-    /// <param name="second">The second item.</</param>
+    /// <param name="second">The second item.</param>
     /// <returns>True if the first item is lesser, false if not.</returns>
     public static bool MinHeapCompare(T first, T second)
     {
@@ -100,6 +109,7 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
         }
     }
 
+    //Properties for the PriorityQueue's metadata
     public T[] Heap { get => heap; private set => heap = value; }
     public int Count { get => count; }
     public bool IsSynchronized => Heap.IsSynchronized;
@@ -172,12 +182,12 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
             ExpandHeap();
         }
 
-        //append to backing array
+        //append to the heap
         Heap[masterIndex] = element;
         masterIndex++;
         count++;
 
-        //send inserted item to correct spot
+        //send inserted item to correct index
         ReHeapUp();
     }
 
@@ -197,13 +207,14 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
             int toRemove = masterIndex - 1;
             T removed = ItemAt(ROOT);
 
-            //overwrite the root with the spot behind the next insertion target, recalibrate occupancy
+            //overwrite the root with the spot behind the next insertion target,
+            //then recalibrate occupancy
             Heap[ROOT] = ItemAt(toRemove);
             Heap[toRemove] = default(T);
             masterIndex--;
             count--;
 
-            //restruct tree	
+            //restructure the heap
             ReHeapDown();
 
             return removed;
@@ -321,10 +332,10 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
     }
 
     /// <summary>
-    /// Retructures the tree to accomodate an insertion.
-    /// The inserted item will be compared to its parent and swapped 
-    /// with it until it's of higher priority than its parent 
-    /// and of lower priority than its children.
+    /// This method restructures the tree to accomodate an insertion.
+    /// The inserted item is compared to its parent and swapped 
+    /// with it until it's of lower priority than its parent 
+    /// and of higher priority than its children.
     /// </summary>
     private void ReHeapUp()
     {
@@ -353,10 +364,10 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
     }
 
     /// <summary>
-    /// This method will restructure the tree to accommodate a removal.
-	/// The insertion target will be compared to its children and swapped
-    /// with the smaller one until it's of lower priority than its parent 
-	/// and of higher priority than its children.
+    /// This method restructures the tree to accommodate a removal.
+	/// The insertion target is compared to its children and swapped
+    /// with the children of lower priority one until it's of 
+    /// lower priority than its parent and of higher priority than its children.
     /// </summary>
     private void ReHeapDown()
     {
@@ -371,15 +382,14 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
             //the child of lower priority defaults to left
             int smallerChild = left;
 
-            //if right is of lower priority or equal, use that
-            if (right != INVALID 
-                && PriorityCompare(ItemAt(left), ItemAt(right)))
+            //if right is of lower priority or equal, use it instead
+            if (right != INVALID && !PriorityCompare(ItemAt(right), ItemAt(left)))
             {
                 smallerChild = right;
             }
 
-            //out of order, swap
-            if (PriorityCompare(ItemAt(curr), ItemAt(smallerChild)))
+            //the current item is not of higher priority than its smaller child
+            if (!PriorityCompare(ItemAt(curr), ItemAt(smallerChild)))
             {
                 Swap(curr, smallerChild);
             }
@@ -502,6 +512,10 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
         Heap = new T[Heap.Length];
     }
 
+    /// <summary>
+    /// Performs implicit BFS on the heap to construct an array of its contents in sorted order.
+    /// </summary>
+    /// <returns>A sorted array representation of the backing heap.</returns>
     public T[] ToArraySorted()
     {
         //the out-array holds the sorted heap representation
@@ -534,6 +548,10 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
         return outArray;
     }
 
+    /// <summary>
+    /// Returns a shallow copy of the backing heap.
+    /// </summary>
+    /// <returns>An unsorted array representation of the backing heap.</returns>
     public T[] ToArray()
     {
         return (T[])Heap.Clone();
@@ -543,6 +561,7 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
     {
         Heap.CopyTo(array, index);
     }
+
     public IEnumerator<T> GetEnumerator()
     {
         return (IEnumerator<T>)Heap.GetEnumerator();
@@ -585,7 +604,13 @@ public class PriorityQueue<T> : IEnumerable<T>, ICollection, IReadOnlyCollection
         return theString;
     }
 
-    public static List<IComparable> HeapSort(ICollection<IComparable> toSort, bool usingMinHeap)
+    /// <summary>
+    /// Sorts any given collection of <c>IComparables</c> into a <c>List</c> using a PriorityQueue.
+    /// </summary>
+    /// <param name="toSort">The collection to sort.</param>
+    /// <param name="usingMinHeap"><c>true</c> if the elements are to be sorted in ascending order, <c>false</c> if descending.</param>
+    /// <returns>A sorted <c>List</c> of <c>IComparables</c>.</returns>
+    public static List<IComparable> HeapSort(in ICollection<IComparable> toSort, bool usingMinHeap)
     {
         //the out list stores the elements in sorted order
         var outList = new List<IComparable>(toSort.Count);

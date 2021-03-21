@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-//using Priority_Queue; // \(>_<)/ why does it have to be this way
+using DotNETPriorityQueue; // \(>_<)/ why does it have to be this way
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;

@@ -27,7 +27,7 @@ namespace DotNETPriorityQueue
         /// </summary>
         private T[] heap;
         private int count; // How many elements are in the heap?
-        private int capacity; // Maximum capacy of the heap
+        private int capacity; // Maximum capacity of the heap
         private int masterIndex; // The next index to insert at
 
         // static constants
@@ -64,7 +64,7 @@ namespace DotNETPriorityQueue
         /// </summary>
         /// <param name="first">The first item.</param>
         /// <param name="second">The second item.</param>
-        /// <returns>True if the first item is greater, false if not.</returns>
+        /// <returns><c>true</c> if the first item is greater, <c>false</c> if not.</returns>
         public static bool MaxHeapCompare(T first, T second)
         {
             if (first is IComparable && second is IComparable)
@@ -91,7 +91,7 @@ namespace DotNETPriorityQueue
         /// </summary>
         /// <param name="first">The first item.</param>
         /// <param name="second">The second item.</param>
-        /// <returns>True if the first item is lesser, false if not.</returns>
+        /// <returns><c>true</c> if the first item is lesser, <c>false</c> if not.</returns>
         public static bool MinHeapCompare(T first, T second)
         {
             if (first is IComparable && second is IComparable)

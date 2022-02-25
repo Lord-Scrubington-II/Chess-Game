@@ -8,6 +8,8 @@ using UnityEngine;
 /// </summary>
 public struct Move : IComparable
 {
+    // TODO: I wonder if Moves should have an enum associated with them that says something about them?
+    // e.g. en passant, castling, double pawn push...
     private DummyChessman movingChessman;
     private DummyChessman targetingChessman;
 

@@ -225,7 +225,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
     private void OnMouseUp()
     {
         //for some reason, the game lets me click on AI-controlled pieces while it's "thinking."
-        //TODO: find out why the f*ck this is happening
+        //NOTE 2/24: seems to be fixed?
         if (!ControlsFrozen && !Chess.GameOver)
         {
             if(Chess.UsingAI)
@@ -437,6 +437,7 @@ public class Chessman : MonoBehaviour, IComputableChessman
 
     /// <summary>
     /// The moveplate pattern instantiation function for pawns.
+    /// // TODO: I wonder if En Passant would be conducive to the type of chess parody I'm going for?
     /// </summary>
     private void PawnMovePlates(int x, int y)
     {
@@ -764,6 +765,9 @@ public class Chessman : MonoBehaviour, IComputableChessman
         return myMoves;
     }
 
+    //FIXME: This does not quite follow FIDE rules for castling!
+    // Though strict adherence to FIDE rules is not really the main concern,
+    // the king moves too far when the rook is beyond 3 squares away. should fix.
     private void KingsCastleMoves(ref List<Move> myMoves)
     {
         int kingsFile = this.File;

@@ -836,16 +836,21 @@ public static class Chess
         SceneManager.LoadScene(0);
     }
 
-
+    /// <summary>
+    /// This static class defines the algorithms and API for making calls to the Chess AI.
+    /// Uses the Minimax algorithm. Possibly inefficient; some refactors may be in order
+    /// i.e. converting the board into an object with an indexer.
+    /// </summary>
     internal static class AIModule
     {
         public static readonly float thinkDelay = 1.0f;
         public delegate Move MoveSelectionFunction(IComputableChessman[,] board);
         public delegate int EvaluationFunction(in IComputableChessman[,] board, bool WhiteToMove);
-        private static Chessman.Colours aiColour;
+
+        private static Chessman.Colours aiColour; // TODO: add option in menus
         public static MoveSelectionFunction SelectMove;
         private static EvaluationFunction Evaluate;
-        internal static int AISearchDepth = 2;
+        internal static int AISearchDepth = 3; // TODO: add option in menus
         private static int trackingMoveCount = 3;
 
         public static Chessman.Colours AIColour { get => aiColour; set => aiColour = value; }

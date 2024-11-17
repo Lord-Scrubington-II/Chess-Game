@@ -1,5 +1,5 @@
 # Chess-Game
-An unassuming chess game. Includes a (self-written) Chess AI. All code is in `./Assets/Scripts` - for the AI Code, go to `./Assets/Scripts/Chess.cs -> AIModule`. (WIP)
+An unassuming chess game. Includes a (self-written) Chess AI. All code is in `./Assets/Scripts` - for the AI Code, go to `./Assets/Scripts/Chess.cs -> AIModule`.
 
 ## Features
 This is a chess app built in Unity Game Engine, designed for Android and PC builds. However, it is not your average chess game. 
@@ -14,12 +14,10 @@ Future planned features include a settings menu, additional *bad chess* levels, 
 ![LevelSample3](https://github.com/Lord-Scrubington-II/Chess-Game/blob/main/LevelSample3.png)
 
 ## Attributions
-Chess is an ancient game, so it entered the public domain many ages ago.
-
 This project began its existence as the foundation for a game development project at my university. I must thank my former supervisor for letting me keep the code I had originally written.
 
 To help get this project off the ground, I started with this video series by Youtube user Etredal, which may be viewed here: https://www.youtube.com/watch?v=lFZeeTZ29w0&list=PLXV-vjyZiT4b7WGjgiqMy422AVyMaigl1&index=2. 
-However, I have completely (and I mean completely) overhauled the architecture of the game in preparation for the implementation of future features - as well as for long-term maintainability, and also as a general exercise in foundational software development practices.
+I have overhauled the architecture of the game to implement the Chess AI.
 
 All art assets are from either the Unity Asset Store or from this page on Itch.io: https://devilsworkshop.itch.io/pixel-art-chess-asset-pack.
 These art assets are all licensed under the Creative Commons CC0 1.0.
